@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "A published editorial article on the Basair platform",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "slug": { "type": "string", "maxLength": 200 },
+        "title": { "type": "string", "maxLength": 500 },
+        "subtitle": { "type": "string", "maxLength": 1000 },
+        "excerpt": { "type": "string", "maxLength": 2000 },
+        "categorySlug": { "type": "string", "maxLength": 128 },
+        "categoryName": { "type": "string", "maxLength": 200 },
+        "seriesName": { "type": "string", "maxLength": 200 },
+        "author": { "type": "object" },
+        "authorSlug": { "type": "string", "maxLength": 128 },
+        "blogTitle": { "type": "string", "maxLength": 200 },
+        "publishedAt": { "type": "string", "maxLength": 100 },
+        "hijriDate": { "type": "string", "maxLength": 100 },
+        "readingTimeMinutes": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "isCuratedStar": { "type": "boolean" },
+        "coverImage": { "type": "string", "maxLength": 900000 },
+        "coverCaption": { "type": "string", "maxLength": 600 },
+        "tags": { "type": "array" },
+        "content": { "type": "array" },
+        "footnotes": { "type": "array" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": [
+        "id",
+        "slug",
+        "title",
+        "subtitle",
+        "excerpt",
+        "categorySlug",
+        "categoryName",
+        "author",
+        "publishedAt",
+        "hijriDate",
+        "readingTimeMinutes",
+        "coverImage",
+        "coverCaption",
+        "tags",
+        "content"
+      ]
+    },
+    "SiteConfigDoc": {
+      "title": "SiteConfigDoc",
+      "description": "Global site configuration, writers, categories, and series",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string", "maxLength": 200 },
+        "brandWordmark": { "type": "string", "maxLength": 200 },
+        "tagline": { "type": "string", "maxLength": 300 },
+        "subtitle": { "type": "string", "maxLength": 1000 },
+        "footerNote": { "type": "string", "maxLength": 300 },
+        "supervisorName": { "type": "string", "maxLength": 200 },
+        "newsletterBadge": { "type": "string", "maxLength": 200 },
+        "newsletterHeading": { "type": "string", "maxLength": 500 },
+        "newsletterDescription": { "type": "string", "maxLength": 1000 },
+        "telegramUrl": { "type": "string", "maxLength": 500 },
+        "telegramButtonText": { "type": "string", "maxLength": 200 },
+        "xUrl": { "type": "string", "maxLength": 500 },
+        "xEnabled": { "type": "boolean" },
+        "facebookUrl": { "type": "string", "maxLength": 500 },
+        "facebookEnabled": { "type": "boolean" },
+        "whatsappUrl": { "type": "string", "maxLength": 500 },
+        "whatsappEnabled": { "type": "boolean" },
+        "youtubeUrl": { "type": "string", "maxLength": 500 },
+        "youtubeEnabled": { "type": "boolean" },
+        "aboutBadge": { "type": "string", "maxLength": 300 },
+        "aboutHeading": { "type": "string", "maxLength": 300 },
+        "aboutIntro": { "type": "string", "maxLength": 3000 },
+        "aboutMissionHeading": { "type": "string", "maxLength": 300 },
+        "aboutMissionText": { "type": "string", "maxLength": 3000 },
+        "aboutQuote": { "type": "string", "maxLength": 1000 },
+        "showHeroSection": { "type": "boolean" },
+        "showWritersShelf": { "type": "boolean" },
+        "showSeriesSection": { "type": "boolean" },
+        "showNewsletterSection": { "type": "boolean" },
+        "defaultArticlesViewMode": { "type": "string", "enum": ["horizontal", "grid"] },
+        "defaultWriterSlug": { "type": "string", "maxLength": 128 },
+        "writers": { "type": "array" },
+        "categories": { "type": "array" },
+        "series": { "type": "array" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": [
+        "siteName",
+        "brandWordmark",
+        "tagline",
+        "subtitle",
+        "writers",
+        "categories",
+        "series"
+      ]
+    },
+    "SiteAnalyticsDoc": {
+      "title": "SiteAnalyticsDoc",
+      "description": "Platform visit and article view statistics",
+      "type": "object",
+      "properties": {
+        "totalSiteVisits": { "type": "number" },
+        "uniqueVisitors": { "type": "number" },
+        "avgSessionDurationSeconds": { "type": "number" },
+        "avgCompletionRate": { "type": "number" },
+        "newsletterSubscribersCount": { "type": "number" },
+        "dailyStats": { "type": "array" },
+        "articleViews": { "type": "object" },
+        "articleReadsCompleted": { "type": "object" },
+        "writerVisits": { "type": "object" },
+        "categoryVisits": { "type": "object" },
+        "trafficSources": { "type": "object" },
+        "lastUpdated": { "type": "string", "maxLength": 64 }
+      },
+      "required": [
+        "totalSiteVisits",
+        "uniqueVisitors",
+        "dailyStats",
+        "articleViews",
+        "writerVisits",
+        "categoryVisits",
+        "lastUpdated"
+      ]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "A scholarly message or inquiry submitted via the About page contact form",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 320 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "name", "email", "message", "createdAt", "read"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized platform administrator record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 320 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "addedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "role", "addedAt"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": { "$ref": "#/entities/Article" },
+      "description": "Published articles visible to all readers and managed by admins"
+    },
+    "/site_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteConfigDoc" },
+      "description": "Global site configuration document (settingId == 'main')"
+    },
+    "/site_analytics/{analyticsId}": {
+      "schema": { "$ref": "#/entities/SiteAnalyticsDoc" },
+      "description": "Global site analytics counters (analyticsId == 'main')"
+    },
+    "/contact_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ContactMessage" },
+      "description": "Contact messages submitted by visitors, readable only by admins"
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin role directory"
+    }
+  }
+}

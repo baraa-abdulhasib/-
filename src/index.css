@@ -1,0 +1,703 @@
+@import "tailwindcss";
+@import "./fonts.css";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* ==========================================================================
+     متغيرات الخطوط الثلاثة في المدونة
+     ========================================================================== */
+  /* 1. خط المتن والقراءة (Regular, Medium, Bold) */
+  --font-prose: 'Thmanyah Serif Text', 'IBM Plex Sans Arabic', 'Tajawal', serif;
+
+  /* 2. خط القوائم، الأزرار، والتواريخ (Regular, Bold) */
+  --font-ui: 'Thmanyah Sans', 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
+
+  /* 3. خط العناوين الرئيسية الكبرى h1 (Bold فقط) */
+  --font-display: 'Thmanyah Serif Display', 'Thmanyah Serif Text', 'Tajawal', serif;
+
+  /* 4. خط الآيات القرآنية المخصص (خط المصحف النسخي المزخرف مع دعم الوزنين الرفيع والثخين) */
+  --font-quran: 'Amiri', 'Amiri Quran', 'Traditional Arabic', 'Thmanyah Serif Text', serif;
+
+  /* متغير توافقي عام */
+  --font-primary: var(--font-prose);
+
+  /* إعدادات عمود القراءة المريحة */
+  --article-font-size: 18px;
+  --article-line-height: 1.92;
+  --article-max-width: 700px;
+
+  /* لوحة الألوان - الوضع الفاتح (ورقي دافئ مستلهم من المرجع) */
+  --bg-canvas: #F9F7F2;
+  --bg-surface: #EFECE6;
+  --bg-card: #FFFFFF;
+  --text-primary: #141413;
+  --text-secondary: #4A4742;
+  --text-muted: #78736A;
+  --accent-primary: #E05324;
+  --accent-gold: #F5B800;
+  --border-subtle: #E6E2D8;
+}
+
+.dark {
+  --bg-canvas: #121110;
+  --bg-surface: #1D1B19;
+  --bg-card: #181614;
+  --text-primary: #F5F3EF;
+  --text-secondary: #B8B3AA;
+  --text-muted: #8A847A;
+  --accent-primary: #F06438;
+  --accent-gold: #F5B800;
+  --border-subtle: #2A2724;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-prose);
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-prose);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+  }
+
+  /* العناوين الرئيسية الكبرى h1 تأخذ خط العناوين (thmanyahserifdisplay Bold) */
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* العناوين الفرعية وعناوين البطاقات تأخذ خط القراءة العريض (thmanyahseriftext Bold) */
+  h2, h3, h4 {
+    font-family: var(--font-prose);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* القوائم والأزرار والتواريخ والحقول تأخذ خط الواجهات (thmanyahsans) */
+  nav, button, input, textarea, time, label {
+    font-family: var(--font-ui);
+  }
+}
+
+/* فئات مساعدة صريحة للخطوط الثلاثة + خط القرآن */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-prose {
+  font-family: var(--font-prose);
+}
+
+.font-quran {
+  font-family: var(--font-quran);
+}
+
+/* تنسيق خاص بالآيات القرآنية ﴿ ... ﴾ لإبرازها بخط المصحف الوقور بدون أي خلفية صفراء مستطيلة */
+.quran-verse {
+  font-family: var(--font-quran);
+  font-size: 1.22em;
+  line-height: 2.0;
+  font-weight: inherit;
+  color: #142822;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-inline: 0.08em;
+}
+
+.dark .quran-verse {
+  color: #FBF7EE;
+  background: transparent;
+  border: none;
+}
+
+/* التحكم في سماكة النص والآيات (ثخين / رفيع) */
+[data-weight="bold"],
+.quran-verse[data-weight="bold"],
+.article-prose blockquote[data-weight="bold"],
+.article-prose blockquote[data-weight="bold"] .quran-verse {
+  font-weight: 700 !important;
+}
+
+[data-weight="regular"],
+.quran-verse[data-weight="regular"],
+.article-prose blockquote[data-weight="regular"],
+.article-prose blockquote[data-weight="regular"] .quran-verse {
+  font-weight: 400 !important;
+}
+
+/* القوس القرآني الأصيل ﴿ و ﴾ بخط أميري مع موازنة عمودية دقيقة لتكون الآية في وسط القوس تماماً */
+.quran-bracket {
+  font-family: 'Amiri', 'Amiri Quran', serif !important;
+  font-style: normal;
+  font-weight: 400 !important;
+  font-size: 1.08em;
+  line-height: 1;
+  color: #C47A00 !important;
+  -webkit-text-fill-color: #C47A00 !important;
+  position: relative;
+  top: 0.14em;
+  padding-inline: 0.12em;
+  user-select: all;
+}
+
+.dark .quran-bracket {
+  color: #FFD24C !important;
+  -webkit-text-fill-color: #FFD24C !important;
+}
+
+/* تنسيق خاص بعمود متن المقال لراحة القراءة باستخدام خط المتن (thmanyahseriftext) */
+.article-prose {
+  font-family: var(--font-prose);
+  font-size: var(--article-font-size);
+  line-height: var(--article-line-height);
+  max-width: var(--article-max-width);
+  font-weight: 400;
+}
+
+.article-prose p,
+.article-prose li,
+.article-prose blockquote {
+  font-family: var(--font-prose);
+}
+
+.article-prose p {
+  margin-bottom: 1.65em;
+}
+
+.article-prose h2 {
+  font-family: var(--font-prose);
+  font-weight: 700;
+  font-size: 1.6rem;
+  line-height: 1.45;
+  margin-top: 2.4em;
+  margin-bottom: 0.85em;
+  letter-spacing: -0.01em;
+}
+
+.article-prose h3 {
+  font-family: var(--font-prose);
+  font-weight: 500;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  margin-top: 1.9em;
+  margin-bottom: 0.65em;
+}
+
+/* إخفاء شريط التمرير مع بقاء التمرير الأفقي في الجوال */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ==========================================================================
+   تأثيرات وحركات أيقونات إشراق «بصائر» (Three Golden Sunbursts)
+   ========================================================================== */
+@keyframes sunburstAmbientPulse {
+  0%, 100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.sunburst-ambient-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(245, 176, 0, 0.28) 0%,
+    rgba(224, 83, 36, 0.08) 52%,
+    rgba(245, 176, 0, 0) 78%
+  );
+  animation: sunburstAmbientPulse 5.5s ease-in-out infinite;
+}
+
+.dark .sunburst-ambient-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 198, 46, 0.24) 0%,
+    rgba(240, 100, 56, 0.09) 54%,
+    rgba(255, 198, 46, 0) 80%
+  );
+}
+
+/* تنسيق الفاصل البصري الثلاثي داخل محرر الكتابة */
+hr[data-block-type="divider"] {
+  border: none;
+  height: 36px;
+  margin: 2.25rem auto;
+  width: 160px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 48' fill='none'%3E%3Cdefs%3E%3Cpath id='s' fill-rule='evenodd' fill='%23F5A800' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/defs%3E%3Cuse href='%23s' x='6'/%3E%3Cuse href='%23s' x='66'/%3E%3Cuse href='%23s' x='126'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* ==========================================================================
+   هالة ضوئية دافئة في خلفية الصفحات العليا (تعمل في الوضع الليلي فقط بعد إلغائها من الوضع النهاري)
+   ========================================================================== */
+.editorial-top-vignette {
+  background: none;
+}
+
+.dark .editorial-top-vignette {
+  background:
+    radial-gradient(
+      ellipse 80% 58% at 50% -6%,
+      rgba(245, 184, 0, 0.115) 0%,
+      rgba(240, 100, 56, 0.075) 44%,
+      rgba(18, 17, 16, 0) 80%
+    ),
+    radial-gradient(
+      circle at 74% 16%,
+      rgba(240, 100, 56, 0.065) 0%,
+      rgba(245, 184, 0, 0.035) 40%,
+      rgba(18, 17, 16, 0) 72%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(44, 30, 19, 0.52) 0%,
+      rgba(28, 22, 17, 0.24) 48%,
+      rgba(18, 17, 16, 0) 100%
+    );
+}
+
+/* هالة تركيز دافئة خلف رأس المقال أو المقال المميز (تعمل في الوضع الليلي فقط) */
+.editorial-focal-halo {
+  background: none;
+}
+
+.dark .editorial-focal-halo {
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 32%,
+    rgba(245, 184, 0, 0.08) 0%,
+    rgba(240, 100, 56, 0.05) 46%,
+    rgba(18, 17, 16, 0) 78%
+  );
+}
+
+/* ==========================================================================
+   قالب الاقتباس المضلّع لمنصة «بصائر» (الوضع النهاري والوضع الليلي + محرر الكتابة)
+   ========================================================================== */
+
+/* 1. الوضع النهاري: الحجر الورقي الدافئ المضلّع عمودياً */
+.basair-quote-ribbed {
+  background-color: #EAE5DA;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(255, 253, 249, 0.52) 0%,
+      rgba(239, 236, 230, 0.08) 18%,
+      rgba(214, 206, 190, 0.22) 50%,
+      rgba(239, 236, 230, 0.08) 82%,
+      rgba(255, 253, 249, 0.52) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 253, 249, 0.82) 0px,
+      rgba(255, 253, 249, 0.82) 2px,
+      rgba(232, 227, 215, 0.35) 2px,
+      rgba(232, 227, 215, 0.35) 5px,
+      rgba(120, 115, 106, 0.12) 5px,
+      rgba(120, 115, 106, 0.12) 7px,
+      rgba(239, 236, 230, 0.45) 7px,
+      rgba(239, 236, 230, 0.45) 10px
+    );
+}
+
+/* 2. الوضع الليلي: الزجاج الفحمي المضلّع العمودي الفاخر (مطابق للصورة المرجعية) */
+.dark .basair-quote-ribbed {
+  background-color: #161513;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(249, 247, 242, 0.06) 0%,
+      rgba(18, 17, 16, 0.18) 20%,
+      rgba(0, 0, 0, 0.42) 50%,
+      rgba(18, 17, 16, 0.18) 80%,
+      rgba(249, 247, 242, 0.06) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(249, 247, 242, 0.065) 0px,
+      rgba(249, 247, 242, 0.065) 2px,
+      rgba(26, 24, 22, 0.4) 2px,
+      rgba(26, 24, 22, 0.4) 5px,
+      rgba(0, 0, 0, 0.62) 5px,
+      rgba(0, 0, 0, 0.62) 7px,
+      rgba(24, 22, 20, 0.4) 7px,
+      rgba(24, 22, 20, 0.4) 10px
+    );
+}
+
+/* 3. تنسيق الاقتباس الحي داخل محرر الكتابة (Studio Editor) ليطابق قالب بصائر مباشرة */
+.article-prose blockquote:not(.basair-quote-custom) {
+  position: relative;
+  margin: 2.75rem 0 2.25rem;
+  padding: 2.75rem 1.75rem 3.1rem;
+  border-radius: 22px;
+  border: 1px solid #CFC6B4;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.32rem;
+  line-height: 1.82;
+  color: #141413;
+  background-color: #EAE5DA;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(255, 253, 249, 0.52) 0%,
+      rgba(239, 236, 230, 0.08) 18%,
+      rgba(214, 206, 190, 0.22) 50%,
+      rgba(239, 236, 230, 0.08) 82%,
+      rgba(255, 253, 249, 0.52) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 253, 249, 0.82) 0px,
+      rgba(255, 253, 249, 0.82) 2px,
+      rgba(232, 227, 215, 0.35) 2px,
+      rgba(232, 227, 215, 0.35) 5px,
+      rgba(120, 115, 106, 0.12) 5px,
+      rgba(120, 115, 106, 0.12) 7px,
+      rgba(239, 236, 230, 0.45) 7px,
+      rgba(239, 236, 230, 0.45) 10px
+    );
+  box-shadow:
+    0 12px 32px -12px rgba(20, 20, 19, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.dark .article-prose blockquote:not(.basair-quote-custom) {
+  border-color: rgba(249, 247, 242, 0.22);
+  color: #F9F7F2;
+  background-color: #161513;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(249, 247, 242, 0.06) 0%,
+      rgba(18, 17, 16, 0.18) 20%,
+      rgba(0, 0, 0, 0.42) 50%,
+      rgba(18, 17, 16, 0.18) 80%,
+      rgba(249, 247, 242, 0.06) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(249, 247, 242, 0.065) 0px,
+      rgba(249, 247, 242, 0.065) 2px,
+      rgba(26, 24, 22, 0.4) 2px,
+      rgba(26, 24, 22, 0.4) 5px,
+      rgba(0, 0, 0, 0.62) 5px,
+      rgba(0, 0, 0, 0.62) 7px,
+      rgba(24, 22, 20, 0.4) 7px,
+      rgba(24, 22, 20, 0.4) 10px
+    );
+  box-shadow:
+    0 18px 42px -12px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(249, 247, 242, 0.14);
+}
+
+.article-prose blockquote:not(.basair-quote-custom)::before {
+  content: "";
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23EAE5DA' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23F5A800' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3Cg fill='%23141413'%3E%3Ccircle cx='19.55' cy='20.4' r='3.35'/%3E%3Cpath d='M22.9 20.4C22.9 25.0 21.0 28.5 18.45 30.85L17.5 30.05C19.25 27.85 20.2 25.4 19.95 23.2Z'/%3E%3Ccircle cx='28.45' cy='20.4' r='3.35'/%3E%3Cpath d='M31.8 20.4C31.8 25.0 29.9 28.5 27.35 30.85L26.4 30.05C28.15 27.85 29.1 25.4 28.85 23.2Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.dark .article-prose blockquote:not(.basair-quote-custom)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23161513' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23FFD55E' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3Cg fill='%23141311'%3E%3Ccircle cx='19.55' cy='20.4' r='3.35'/%3E%3Cpath d='M22.9 20.4C22.9 25.0 21.0 28.5 18.45 30.85L17.5 30.05C19.25 27.85 20.2 25.4 19.95 23.2Z'/%3E%3Ccircle cx='28.45' cy='20.4' r='3.35'/%3E%3Cpath d='M31.8 20.4C31.8 25.0 29.9 28.5 27.35 30.85L26.4 30.05C28.15 27.85 29.1 25.4 28.85 23.2Z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* تخصيص قالب الآيات داخل محرر الكتابة: خط المصحف + نجمة بصائر وبداخلها مخطوطة القرآن الكريم */
+.article-prose blockquote[data-quote-type="quran"]:not(.basair-quote-custom) {
+  font-family: 'Amiri', 'Amiri Quran', var(--font-prose), serif;
+  font-size: 1.55rem;
+  line-height: 2.0;
+}
+
+.article-prose blockquote[data-quote-type="quran"]:not(.basair-quote-custom)::before {
+  background-image:
+    url("/assets/aistudio/quran_calligraphy_transparent.png"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23EAE5DA' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23F5A800' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: 28px 28px, 56px 56px;
+}
+
+.dark .article-prose blockquote[data-quote-type="quran"]:not(.basair-quote-custom)::before {
+  background-image:
+    url("/assets/aistudio/quran_calligraphy_transparent.png"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23161513' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23FFD55E' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: 28px 28px, 56px 56px;
+}
+
+/* تخصيص قالب الأحاديث النبوية داخل محرر الكتابة: نجمة بصائر وبداخلها مخطوطة «الحديث النبوي» في الوضعين النهاري والليلي */
+.article-prose blockquote[data-quote-type="hadith"]:not(.basair-quote-custom)::before {
+  background-image:
+    url("/assets/aistudio/hadith_calligraphy_transparent.png"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23EAE5DA' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23F5A800' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: 28px 28px, 56px 56px;
+}
+
+.dark .article-prose blockquote[data-quote-type="hadith"]:not(.basair-quote-custom)::before {
+  background-image:
+    url("/assets/aistudio/hadith_calligraphy_transparent.png"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23161513' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23FFD55E' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: 28px 28px, 56px 56px;
+}
+
+/* شريط الهوية السفلي داخل المحرر: بخط ثمانية، تفصل بين الكلمة الإنجليزية والعربية نقطة، يبدأ باللون الرمادي من الوسط ويتلاشى باتجاه أطراف القالب */
+.article-prose blockquote:not(.basair-quote-custom)::after {
+  content: "BASAIRPLATFORM   •   منصة بصائر   •   BASAIRPLATFORM   •   منصة بصائر   •   BASAIRPLATFORM   •   منصة بصائر   •   BASAIRPLATFORM";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.42rem 1rem;
+  border-top: 1px solid rgba(207, 198, 180, 0.85);
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', var(--font-ui), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #78736A;
+  text-align: center;
+  direction: ltr;
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.16) 14%,
+    rgba(0, 0, 0, 0.72) 34%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.72) 66%,
+    rgba(0, 0, 0, 0.16) 86%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.16) 14%,
+    rgba(0, 0, 0, 0.72) 34%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.72) 66%,
+    rgba(0, 0, 0, 0.16) 86%,
+    transparent 100%
+  );
+}
+
+.dark .article-prose blockquote:not(.basair-quote-custom)::after {
+  border-top-color: rgba(249, 247, 242, 0.16);
+  color: rgba(249, 247, 242, 0.58);
+}
+
+/* حاوية نص الآية أو الاقتباس داخل محرر الكتابة */
+.article-prose blockquote:not(.basair-quote-custom) .basair-quote-editor-text {
+  display: block;
+  min-height: 1.5em;
+  outline: none;
+}
+
+/* سطر المصدر / مكان الآية أو الحديث داخل القالب (المقترح الأول + الطريقة أ):
+   بخط ثمانية الواجهي العادي (Thmanyah Sans Regular) رمادي خفيف وأصغر من الخط العادي */
+.article-prose blockquote:not(.basair-quote-custom) cite[data-quote-cite],
+.article-prose blockquote:not(.basair-quote-custom) .basair-quote-editor-cite,
+.article-prose blockquote:not(.basair-quote-custom) small {
+  display: block;
+  margin-top: 0.85rem;
+  font-family: 'Thmanyah Sans', var(--font-ui), sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 1.65 !important;
+  letter-spacing: 0;
+  color: #78736A !important;
+  text-align: center;
+  min-height: 1.5em;
+  outline: none;
+  cursor: text;
+}
+
+.dark .article-prose blockquote:not(.basair-quote-custom) cite[data-quote-cite],
+.dark .article-prose blockquote:not(.basair-quote-custom) .basair-quote-editor-cite,
+.dark .article-prose blockquote:not(.basair-quote-custom) small {
+  color: #9E988E !important;
+}
+
+/* النص الإرشادي التلقائي (Placeholder) لسطر المصدر حينما يكون فارغاً داخل المحرر */
+.article-prose blockquote:not(.basair-quote-custom) cite[data-quote-cite]:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(120, 115, 106, 0.52);
+  font-family: 'Thmanyah Sans', var(--font-ui), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  font-style: normal;
+  pointer-events: none;
+}
+
+.dark .article-prose blockquote:not(.basair-quote-custom) cite[data-quote-cite]:empty::before {
+  color: rgba(158, 152, 142, 0.45);
+}
+
+/* ==========================================================================
+   4. صندوق الإضاءة / القاعدة المنهجية (Callout Box) — الوضع النهاري والليلي + المحرر
+   ========================================================================== */
+
+/* الوضع النهاري: سطح ورقي دافئ بإطار حجري ناعم وظل هادئ */
+.basair-callout-box,
+.article-prose aside[data-block-type="callout"] {
+  position: relative;
+  margin: 2.25rem 0;
+  padding: 1.5rem 1.75rem;
+  border-radius: 20px;
+  border: 1px solid #D5CCB8;
+  background: linear-gradient(180deg, #F3EFE6 0%, #ECE6DA 100%);
+  box-shadow:
+    0 10px 26px -12px rgba(20, 20, 19, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  text-align: right;
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+/* الوضع الليلي: سطح فحمي دافئ مطابق للصورة المرجعية مع إطار رصين */
+.dark .basair-callout-box,
+.dark .article-prose aside[data-block-type="callout"] {
+  border-color: #2E2A26;
+  background: linear-gradient(180deg, #1E1C19 0%, #191715 100%);
+  box-shadow:
+    0 14px 34px -12px rgba(0, 0, 0, 0.68),
+    inset 0 1px 0 rgba(249, 247, 242, 0.06);
+}
+
+/* سطر العنوان العلوي داخل صندوق الإضاءة في المحرر (مع نجمة بصائر الذهبية التلقائية على اليمين) */
+.article-prose aside[data-block-type="callout"] .basair-callout-title {
+  position: relative;
+  display: block;
+  padding-right: 1.55rem;
+  margin-bottom: 0.55rem;
+  font-family: var(--font-prose);
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #E05324;
+  outline: none;
+  min-height: 1.6em;
+  cursor: text;
+}
+
+.dark .article-prose aside[data-block-type="callout"] .basair-callout-title {
+  color: #F06438;
+}
+
+/* نجمة بصائر الذهبية بجانب عنوان القاعدة داخل المحرر */
+.article-prose aside[data-block-type="callout"] .basair-callout-title::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0.22em;
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath fill='%23FFF0B8' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8Z'/%3E%3Cpath fill-rule='evenodd' fill='%23F5A800' d='M24.0 0.8C25.4 4.9 29.6 4.4 30.3 8.7C33.9 6.2 36.5 9.4 40.4 7.6C38.6 11.5 41.8 14.1 39.3 17.7C43.6 18.4 43.1 22.6 47.2 24.0C43.1 25.4 43.6 29.6 39.3 30.3C41.8 33.9 38.6 36.5 40.4 40.4C36.5 38.6 33.9 41.8 30.3 39.3C29.6 43.6 25.4 43.1 24.0 47.2C22.6 43.1 18.4 43.6 17.7 39.3C14.1 41.8 11.5 38.6 7.6 40.4C9.4 36.5 6.2 33.9 8.7 30.3C4.4 29.6 4.9 25.4 0.8 24.0C4.9 22.6 4.4 18.4 8.7 17.7C6.2 14.1 9.4 11.5 7.6 7.6C11.5 9.4 14.1 6.2 17.7 8.7C18.4 4.4 22.6 4.9 24.0 0.8ZM24.0 2.7C22.3 6.2 18.8 5.9 18.3 10.2C14.9 7.5 12.6 10.2 8.9 8.9C10.2 12.6 7.5 14.9 10.2 18.3C5.9 18.8 6.2 22.3 2.7 24.0C6.2 25.7 5.9 29.2 10.2 29.7C7.5 33.1 10.2 35.4 8.9 39.1C12.6 37.8 14.9 40.5 18.3 37.8C18.8 42.1 22.3 41.8 24.0 45.3C25.7 41.8 29.2 42.1 29.7 37.8C33.1 40.5 35.4 37.8 39.1 39.1C37.8 35.4 40.5 33.1 37.8 29.7C42.1 29.2 41.8 25.7 45.3 24.0C41.8 22.3 42.1 18.8 37.8 18.3C40.5 14.9 37.8 12.6 39.1 8.9C35.4 10.2 33.1 7.5 29.7 10.2C29.2 5.9 25.7 6.2 24.0 2.7ZM24.0 5.1C25.9 7.9 28.7 7.8 28.9 12.2C32.1 9.2 34.0 11.3 37.4 10.6C36.7 14.0 38.8 15.9 35.8 19.1C40.2 19.3 40.1 22.1 42.9 24.0C40.1 25.9 40.2 28.7 35.8 28.9C38.8 32.1 36.7 34.0 37.4 37.4C34.0 36.7 32.1 38.8 28.9 35.8C28.7 40.2 25.9 40.1 24.0 42.9C22.1 40.1 19.3 40.2 19.1 35.8C15.9 38.8 14.0 36.7 10.6 37.4C11.3 34.0 9.2 32.1 12.2 28.9C7.8 28.7 7.9 25.9 5.1 24.0C7.9 22.1 7.8 19.3 12.2 19.1C9.2 15.9 11.3 14.0 10.6 10.6C14.0 11.3 15.9 9.2 19.1 12.2C19.3 7.8 22.1 7.9 24.0 5.1Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.article-prose aside[data-block-type="callout"] .basair-callout-title:empty::after {
+  content: attr(data-placeholder);
+  color: rgba(224, 83, 36, 0.52);
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.dark .article-prose aside[data-block-type="callout"] .basair-callout-title:empty::after {
+  color: rgba(240, 100, 56, 0.52);
+}
+
+/* متن القاعدة أو الإضاءة المنهجية داخل الصندوق */
+.article-prose aside[data-block-type="callout"] .basair-callout-body {
+  display: block;
+  font-family: var(--font-prose);
+  font-size: 16.5px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: #141413;
+  outline: none;
+  min-height: 1.7em;
+  cursor: text;
+}
+
+.dark .article-prose aside[data-block-type="callout"] .basair-callout-body {
+  color: #F5F3EF;
+}
+
+.article-prose aside[data-block-type="callout"] .basair-callout-body:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(120, 115, 106, 0.55);
+  font-family: var(--font-prose);
+  font-size: 16px;
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.dark .article-prose aside[data-block-type="callout"] .basair-callout-body:empty::before {
+  color: rgba(158, 152, 142, 0.48);
+}
+
+/* تنسيق الروابط المدرجة داخل متن المقال ومحرر الكتابة */
+.article-prose a[href] {
+  color: #E05324;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.article-prose a[href]:hover {
+  opacity: 0.82;
+}
+
+.dark .article-prose a[href] {
+  color: #F06438;
+}
+
+
+
+
+
+
+

@@ -1,0 +1,361 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ==================== Global Helpers ====================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'baraaabdulhasib0@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // ==================== Entity Validation Blueprints ====================
+    function isValidArticle(data) {
+      return data.keys().hasAll([
+          'id',
+          'slug',
+          'title',
+          'subtitle',
+          'excerpt',
+          'categorySlug',
+          'categoryName',
+          'author',
+          'publishedAt',
+          'hijriDate',
+          'readingTimeMinutes',
+          'coverImage',
+          'coverCaption',
+          'tags',
+          'content'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'slug',
+          'title',
+          'subtitle',
+          'excerpt',
+          'categorySlug',
+          'categoryName',
+          'seriesName',
+          'author',
+          'authorSlug',
+          'blogTitle',
+          'publishedAt',
+          'hijriDate',
+          'readingTimeMinutes',
+          'isFeatured',
+          'isCuratedStar',
+          'coverImage',
+          'coverCaption',
+          'tags',
+          'content',
+          'footnotes',
+          'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 200 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 500 &&
+        data.subtitle is string && data.subtitle.size() <= 1000 &&
+        data.excerpt is string && data.excerpt.size() <= 2000 &&
+        data.categorySlug is string && data.categorySlug.size() >= 1 && data.categorySlug.size() <= 128 &&
+        data.categoryName is string && data.categoryName.size() >= 1 && data.categoryName.size() <= 200 &&
+        (!('seriesName' in data) || (data.seriesName is string && data.seriesName.size() <= 200)) &&
+        data.author is map &&
+        (!('authorSlug' in data) || (data.authorSlug is string && data.authorSlug.size() <= 128)) &&
+        (!('blogTitle' in data) || (data.blogTitle is string && data.blogTitle.size() <= 200)) &&
+        data.publishedAt is string && data.publishedAt.size() >= 1 && data.publishedAt.size() <= 100 &&
+        data.hijriDate is string && data.hijriDate.size() <= 100 &&
+        data.readingTimeMinutes is number && data.readingTimeMinutes >= 1 && data.readingTimeMinutes <= 300 &&
+        (!('isFeatured' in data) || data.isFeatured is bool) &&
+        (!('isCuratedStar' in data) || data.isCuratedStar is bool) &&
+        data.coverImage is string && data.coverImage.size() <= 900000 &&
+        data.coverCaption is string && data.coverCaption.size() <= 600 &&
+        data.tags is list && data.tags.size() <= 30 &&
+        (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() <= 100)) &&
+        data.content is list && data.content.size() <= 300 &&
+        (data.content.size() == 0 || data.content[0] is map) &&
+        (!('footnotes' in data) || (
+          data.footnotes is list && data.footnotes.size() <= 150 &&
+          (data.footnotes.size() == 0 || data.footnotes[0] is map)
+        )) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidSiteConfig(data) {
+      return data.keys().hasAll([
+          'siteName',
+          'brandWordmark',
+          'tagline',
+          'subtitle',
+          'writers',
+          'categories',
+          'series'
+        ]) &&
+        data.keys().hasOnly([
+          'siteName',
+          'brandWordmark',
+          'tagline',
+          'subtitle',
+          'footerNote',
+          'supervisorName',
+          'newsletterBadge',
+          'newsletterHeading',
+          'newsletterDescription',
+          'telegramUrl',
+          'telegramButtonText',
+          'xUrl',
+          'xEnabled',
+          'facebookUrl',
+          'facebookEnabled',
+          'whatsappUrl',
+          'whatsappEnabled',
+          'youtubeUrl',
+          'youtubeEnabled',
+          'aboutBadge',
+          'aboutHeading',
+          'aboutIntro',
+          'aboutMissionHeading',
+          'aboutMissionText',
+          'aboutQuote',
+          'showHeroSection',
+          'showWritersShelf',
+          'showSeriesSection',
+          'showNewsletterSection',
+          'defaultArticlesViewMode',
+          'defaultWriterSlug',
+          'writers',
+          'categories',
+          'series',
+          'updatedAt'
+        ]) &&
+        data.siteName is string && data.siteName.size() >= 1 && data.siteName.size() <= 200 &&
+        data.brandWordmark is string && data.brandWordmark.size() >= 1 && data.brandWordmark.size() <= 200 &&
+        data.tagline is string && data.tagline.size() <= 300 &&
+        data.subtitle is string && data.subtitle.size() <= 1000 &&
+        (!('footerNote' in data) || (data.footerNote is string && data.footerNote.size() <= 300)) &&
+        (!('supervisorName' in data) || (data.supervisorName is string && data.supervisorName.size() <= 200)) &&
+        (!('newsletterBadge' in data) || (data.newsletterBadge is string && data.newsletterBadge.size() <= 200)) &&
+        (!('newsletterHeading' in data) || (data.newsletterHeading is string && data.newsletterHeading.size() <= 500)) &&
+        (!('newsletterDescription' in data) || (data.newsletterDescription is string && data.newsletterDescription.size() <= 1000)) &&
+        (!('telegramUrl' in data) || (data.telegramUrl is string && data.telegramUrl.size() <= 500)) &&
+        (!('telegramButtonText' in data) || (data.telegramButtonText is string && data.telegramButtonText.size() <= 200)) &&
+        (!('aboutIntro' in data) || (data.aboutIntro is string && data.aboutIntro.size() <= 3000)) &&
+        (!('aboutMissionText' in data) || (data.aboutMissionText is string && data.aboutMissionText.size() <= 3000)) &&
+        (!('aboutQuote' in data) || (data.aboutQuote is string && data.aboutQuote.size() <= 1000)) &&
+        data.writers is list && data.writers.size() <= 50 &&
+        (data.writers.size() == 0 || data.writers[0] is map) &&
+        data.categories is list && data.categories.size() <= 50 &&
+        (data.categories.size() == 0 || data.categories[0] is map) &&
+        data.series is list && data.series.size() <= 50 &&
+        (data.series.size() == 0 || data.series[0] is map);
+    }
+
+    function isValidSiteAnalytics(data) {
+      return data.keys().hasAll([
+          'totalSiteVisits',
+          'uniqueVisitors',
+          'dailyStats',
+          'articleViews',
+          'writerVisits',
+          'categoryVisits',
+          'lastUpdated'
+        ]) &&
+        data.keys().hasOnly([
+          'totalSiteVisits',
+          'uniqueVisitors',
+          'avgSessionDurationSeconds',
+          'avgCompletionRate',
+          'newsletterSubscribersCount',
+          'dailyStats',
+          'articleViews',
+          'articleReadsCompleted',
+          'writerVisits',
+          'categoryVisits',
+          'trafficSources',
+          'lastUpdated'
+        ]) &&
+        data.totalSiteVisits is number && data.totalSiteVisits >= 0 &&
+        data.uniqueVisitors is number && data.uniqueVisitors >= 0 &&
+        data.dailyStats is list && data.dailyStats.size() <= 31 &&
+        (data.dailyStats.size() == 0 || data.dailyStats[0] is map) &&
+        data.articleViews is map &&
+        data.writerVisits is map &&
+        data.categoryVisits is map &&
+        data.lastUpdated is string && data.lastUpdated.size() <= 64;
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'message', 'createdAt', 'read']) &&
+        data.keys().hasOnly(['id', 'name', 'email', 'message', 'createdAt', 'read']) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 320 &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 5000 &&
+        data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64 &&
+        data.read is bool;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'addedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'addedAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 320 &&
+        data.role == 'admin' &&
+        data.addedAt is string && data.addedAt.size() <= 64;
+    }
+
+    // ==================== Collection Match Blocks ====================
+
+    // 1. Published Articles (Publicly readable blog articles; only Admin can write)
+    match /articles/{articleId} {
+      allow get: if isValidId(articleId);
+      allow list: if request.time != null;
+      allow create: if isAdmin() && isValidId(articleId) && isValidArticle(incoming()) && incoming().id == articleId;
+      allow update: if isAdmin() && isValidId(articleId) && isValidArticle(incoming()) && incoming().id == existing().id && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'slug',
+          'title',
+          'subtitle',
+          'excerpt',
+          'categorySlug',
+          'categoryName',
+          'seriesName',
+          'author',
+          'authorSlug',
+          'blogTitle',
+          'publishedAt',
+          'hijriDate',
+          'readingTimeMinutes',
+          'isFeatured',
+          'isCuratedStar',
+          'coverImage',
+          'coverCaption',
+          'tags',
+          'content',
+          'footnotes',
+          'updatedAt'
+        ]) || isAdmin()
+      );
+      allow delete: if isAdmin() && isValidId(articleId);
+    }
+
+    // 2. Global Site Configuration
+    match /site_settings/{settingId} {
+      allow get: if isValidId(settingId) && settingId == 'main';
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(settingId) && settingId == 'main' && isValidSiteConfig(incoming());
+      allow update: if isAdmin() && isValidId(settingId) && settingId == 'main' && isValidSiteConfig(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'siteName',
+          'brandWordmark',
+          'tagline',
+          'subtitle',
+          'footerNote',
+          'supervisorName',
+          'newsletterBadge',
+          'newsletterHeading',
+          'newsletterDescription',
+          'telegramUrl',
+          'telegramButtonText',
+          'xUrl',
+          'xEnabled',
+          'facebookUrl',
+          'facebookEnabled',
+          'whatsappUrl',
+          'whatsappEnabled',
+          'youtubeUrl',
+          'youtubeEnabled',
+          'aboutBadge',
+          'aboutHeading',
+          'aboutIntro',
+          'aboutMissionHeading',
+          'aboutMissionText',
+          'aboutQuote',
+          'showHeroSection',
+          'showWritersShelf',
+          'showSeriesSection',
+          'showNewsletterSection',
+          'defaultArticlesViewMode',
+          'defaultWriterSlug',
+          'writers',
+          'categories',
+          'series',
+          'updatedAt'
+        ]) || isAdmin()
+      );
+      allow delete: if isAdmin() && isValidId(settingId);
+    }
+
+    // 3. Site Analytics Counters
+    match /site_analytics/{analyticsId} {
+      allow get: if isValidId(analyticsId) && analyticsId == 'main';
+      allow list: if isAdmin();
+      allow create: if isValidId(analyticsId) && analyticsId == 'main' && isValidSiteAnalytics(incoming());
+      allow update: if isValidId(analyticsId) && analyticsId == 'main' && isValidSiteAnalytics(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'totalSiteVisits',
+          'uniqueVisitors',
+          'avgSessionDurationSeconds',
+          'avgCompletionRate',
+          'newsletterSubscribersCount',
+          'dailyStats',
+          'articleViews',
+          'articleReadsCompleted',
+          'writerVisits',
+          'categoryVisits',
+          'trafficSources',
+          'lastUpdated'
+        ]) || isAdmin()
+      );
+      allow delete: if isAdmin() && isValidId(analyticsId);
+    }
+
+    // 4. Scholarly Contact Messages (PII Isolated to Admin Only for Reads)
+    match /contact_messages/{messageId} {
+      allow get: if isAdmin() && isValidId(messageId);
+      allow list: if isAdmin();
+      allow create: if isValidId(messageId) && isValidContactMessage(incoming()) && incoming().id == messageId && incoming().read == false;
+      allow update: if isAdmin() && isValidId(messageId) && isValidContactMessage(incoming()) && incoming().id == existing().id && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']) || isAdmin()
+      );
+      allow delete: if isAdmin() && isValidId(messageId);
+    }
+
+    // 5. Admins Directory
+    match /admins/{adminUid} {
+      allow get: if isAdmin() && isValidId(adminUid);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminUid) && isValidAdminUser(incoming()) && incoming().uid == adminUid;
+      allow update: if isAdmin() && isValidId(adminUid) && isValidAdminUser(incoming()) && incoming().uid == existing().uid && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['email', 'role']) || isAdmin()
+      );
+      allow delete: if isAdmin() && isValidId(adminUid);
+    }
+  }
+}
