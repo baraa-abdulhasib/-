@@ -36,15 +36,15 @@ export const AUTHOR_AVATAR = svgToDataUri(`
 
 export const WRITER_AVATARS = {
   baraa: AUTHOR_AVATAR,
-  shehri: svgToDataUri(`
+  emerald: svgToDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
-    <linearGradient id="bg_shehri" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg_emerald" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#142822"/>
       <stop offset="100%" stop-color="#0B1A15"/>
     </linearGradient>
   </defs>
-  <rect width="240" height="240" rx="120" fill="url(#bg_shehri)"/>
+  <rect width="240" height="240" rx="120" fill="url(#bg_emerald)"/>
   <circle cx="120" cy="120" r="106" fill="none" stroke="#F5B800" stroke-opacity="0.3" stroke-width="1.5"/>
   <circle cx="120" cy="88" r="32" fill="#F4EFE6"/>
   <path d="M66 204 C66 160 92 142 120 142 C148 142 174 160 174 204" fill="#F4EFE6"/>
@@ -53,15 +53,15 @@ export const WRITER_AVATARS = {
   <path d="M100 162 Q120 152 140 162 L140 186 Q120 176 100 186 Z" fill="#142822" stroke="#F5B800" stroke-width="2"/>
 </svg>
 `),
-  abdali: svgToDataUri(`
+  navy: svgToDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
-    <linearGradient id="bg_abdali" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg_navy" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#1E2B37"/>
       <stop offset="100%" stop-color="#0E1720"/>
     </linearGradient>
   </defs>
-  <rect width="240" height="240" rx="120" fill="url(#bg_abdali)"/>
+  <rect width="240" height="240" rx="120" fill="url(#bg_navy)"/>
   <circle cx="120" cy="120" r="106" fill="none" stroke="#93C5FD" stroke-opacity="0.25" stroke-width="1.5"/>
   <circle cx="120" cy="90" r="32" fill="#F4EFE6"/>
   <path d="M66 204 C66 162 92 142 120 142 C148 142 174 162 174 204" fill="#F4EFE6"/>
@@ -71,15 +71,15 @@ export const WRITER_AVATARS = {
   <path d="M102 152 L120 172 L138 152" fill="none" stroke="#60A5FA" stroke-width="3" stroke-linecap="round"/>
 </svg>
 `),
-  hudhayri: svgToDataUri(`
+  gold: svgToDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
-    <linearGradient id="bg_hudhayri" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg_gold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#261E1A"/>
       <stop offset="100%" stop-color="#140E0B"/>
     </linearGradient>
   </defs>
-  <rect width="240" height="240" rx="120" fill="url(#bg_hudhayri)"/>
+  <rect width="240" height="240" rx="120" fill="url(#bg_gold)"/>
   <circle cx="120" cy="120" r="106" fill="none" stroke="#F97316" stroke-opacity="0.25" stroke-width="1.5"/>
   <circle cx="120" cy="90" r="32" fill="#F4EFE6"/>
   <path d="M66 204 C66 160 92 142 120 142 C148 142 174 160 174 204" fill="#F4EFE6"/>

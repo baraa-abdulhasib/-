@@ -109,19 +109,27 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
                 </p>
               </div>
 
-              <div className="divide-y divide-[#E6E2D8] dark:divide-[#2A2724]">
-                {categoryArticles.map((article) => (
-                  <ArticleCard
-                    key={article.id}
-                    article={article}
-                    variant="horizontal"
-                    onSelectArticle={onSelectArticle}
-                    onSelectCategory={(slug) => onSelectCategory(slug)}
-                    isBookmarked={bookmarkedIds.includes(article.id)}
-                    onToggleBookmark={onToggleBookmark}
-                  />
-                ))}
-              </div>
+              {categoryArticles.length === 0 ? (
+                <div className="rounded-2xl border border-[#E6E2D8] dark:border-[#2A2724] bg-[#EFECE6]/40 dark:bg-[#1D1B19]/50 py-10 px-6 text-center">
+                  <p className="font-prose text-[16px] text-[#78736A] dark:text-[#8A847A]">
+                    لا توجد مقالات منشورة في هذا الباب حالياً.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#E6E2D8] dark:divide-[#2A2724]">
+                  {categoryArticles.map((article) => (
+                    <ArticleCard
+                      key={article.id}
+                      article={article}
+                      variant="horizontal"
+                      onSelectArticle={onSelectArticle}
+                      onSelectCategory={(slug) => onSelectCategory(slug)}
+                      isBookmarked={bookmarkedIds.includes(article.id)}
+                      onToggleBookmark={onToggleBookmark}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           );
         })}

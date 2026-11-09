@@ -10,8 +10,8 @@ import {
 import {
   getFirestore,
   doc,
-  getDocFromServer,
   setDoc,
+  updateDoc,
   deleteDoc,
   collection,
   onSnapshot,
@@ -19,8 +19,9 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Article, ARTICLES } from './data/articles';
-import { SiteAnalytics, SiteConfig } from './utils/siteConfig';
+import type { Article } from './data/articles';
+import { ARTICLES } from './data/articles';
+import type { SiteAnalytics, SiteConfig } from './utils/siteConfig';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -81,18 +82,6 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Validate connection to Firestore on boot
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'site_settings', 'main'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
-    }
-  }
-}
-testConnection();
-
 export function isCurrentUserAdmin(user: User | null = auth.currentUser): boolean {
   if (!user) return false;
   return (
@@ -114,12 +103,67 @@ export { onAuthStateChanged };
 export type { User };
 
 /**
+ * ضغط صور Base64 الكبيرة تلقائياً بدلاً من قصّ النص وإتلاف الصورة
+ */
+export async function compressDataUrlIfNeeded(
+  src: string,
+  maxLength = 650000
+): Promise<string> {
+  if (!src || src.length <= maxLength || !src.startsWith('data:image/')) {
+    return src.length <= 900000 ? src : '';
+  }
+  if (typeof document === 'undefined') {
+    return src.length <= 900000 ? src : '';
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const maxDim = 1280;
+        let width = img.width || 1200;
+        let height = img.height || 675;
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(src.length <= 900000 ? src : '');
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        let compressed = canvas.toDataURL('image/jpeg', 0.8);
+        if (compressed.length > maxLength) {
+          compressed = canvas.toDataURL('image/jpeg', 0.6);
+        }
+        resolve(compressed.length <= 900000 ? compressed : '');
+      } catch {
+        resolve(src.length <= 900000 ? src : '');
+      }
+    };
+    img.onerror = () => resolve(src.length <= 900000 ? src : '');
+    img.src = src;
+  });
+}
+
+/**
  * Strip undefined values recursively and enforce schema boundaries for Article
  */
 export function sanitizeArticleForFirestore(article: Article): Record<string, unknown> {
   const safeId = (article.id || `art-${Date.now()}`)
     .replace(/[^a-zA-Z0-9_-]/g, '-')
     .slice(0, 128);
+
+  const rawCover = String(article.coverImage || '');
+  const safeCover =
+    rawCover.startsWith('data:image/') && rawCover.length > 900000
+      ? ''
+      : rawCover.slice(0, 900000);
 
   const sanitized: Record<string, unknown> = {
     id: safeId,
@@ -144,7 +188,7 @@ export function sanitizeArticleForFirestore(article: Article): Record<string, un
     readingTimeMinutes: Math.min(300, Math.max(1, Number(article.readingTimeMinutes) || 5)),
     isFeatured: Boolean(article.isFeatured),
     isCuratedStar: Boolean(article.isCuratedStar),
-    coverImage: String(article.coverImage || '').slice(0, 900000),
+    coverImage: safeCover,
     coverCaption: String(article.coverCaption || '').slice(0, 600),
     tags: Array.isArray(article.tags)
       ? article.tags.slice(0, 30).map((t) => String(t).slice(0, 100))
@@ -163,7 +207,11 @@ export function sanitizeArticleForFirestore(article: Article): Record<string, un
 
 export async function saveArticleToFirestore(article: Article): Promise<void> {
   if (!isCurrentUserAdmin()) return;
-  const payload = sanitizeArticleForFirestore(article);
+  const compressedCover = await compressDataUrlIfNeeded(String(article.coverImage || ''));
+  const payload = sanitizeArticleForFirestore({
+    ...article,
+    coverImage: compressedCover,
+  });
   const docId = String(payload.id);
   const path = `articles/${docId}`;
   try {
@@ -298,13 +346,21 @@ export async function submitContactMessageToFirestore(
   email: string,
   message: string
 ): Promise<void> {
+  const cleanName = name.trim().slice(0, 200);
+  const cleanEmail = email.trim().slice(0, 320);
+  const cleanMessage = message.trim().slice(0, 5000);
+
+  if (!cleanName || cleanEmail.length < 3 || !cleanMessage) {
+    throw new Error('يرجى التأكد من إدخال الاسم والبريد الإلكتروني ونص الرسالة بشكل صحيح.');
+  }
+
   const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const path = `contact_messages/${id}`;
   const payload: ContactMessageItem = {
     id,
-    name: name.trim().slice(0, 200),
-    email: email.trim().slice(0, 320),
-    message: message.trim().slice(0, 5000),
+    name: cleanName,
+    email: cleanEmail,
+    message: cleanMessage,
     createdAt: new Date().toISOString().slice(0, 64),
     read: false,
   };
@@ -317,15 +373,15 @@ export async function submitContactMessageToFirestore(
 
 export async function markContactMessageReadInFirestore(
   id: string,
-   currentMsg: ContactMessageItem,
+  _currentMsg: ContactMessageItem,
   read: boolean
 ): Promise<void> {
   if (!isCurrentUserAdmin()) return;
-  const path = `contact_messages/${id}`;
+  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
+  const path = `contact_messages/${safeId}`;
   try {
-    await setDoc(doc(db, 'contact_messages', id), {
-      ...currentMsg,
-      read,
+    await updateDoc(doc(db, 'contact_messages', safeId), {
+      read: Boolean(read),
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
@@ -334,9 +390,10 @@ export async function markContactMessageReadInFirestore(
 
 export async function deleteContactMessageFromFirestore(id: string): Promise<void> {
   if (!isCurrentUserAdmin()) return;
-  const path = `contact_messages/${id}`;
+  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
+  const path = `contact_messages/${safeId}`;
   try {
-    await deleteDoc(doc(db, 'contact_messages', id));
+    await deleteDoc(doc(db, 'contact_messages', safeId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }

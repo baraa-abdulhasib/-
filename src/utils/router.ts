@@ -37,8 +37,11 @@ export function buildHashPath(
       return '#/';
     case 'blogs':
       return opts?.writerSlug ? `#/blog/${opts.writerSlug}` : '#/blogs';
-    case 'article-detail':
-      return `#/post/${opts?.articleSlug || ARTICLES[0]?.slug || ''}`;
+    case 'article-detail': {
+      const slug =
+        opts?.articleSlug || loadSiteArticles()[0]?.slug || ARTICLES[0]?.slug || '';
+      return slug ? `#/post/${slug}` : '#/';
+    }
     case 'articles':
       return opts?.categorySlug ? `#/articles/${opts.categorySlug}` : '#/articles';
     case 'categories':
@@ -66,7 +69,7 @@ export function parseHashRoute(hash: string): RouteState {
 
   const segments = cleaned.split('/').filter(Boolean);
   const first = segments[0];
-  const second = segments[1] ? decodeURIComponent(segments[1]) : null;
+  const second = segments[1] ? decodeURIComponent(segments[1]).trim() : null;
 
   // مسار المدونات والكُتّاب: #/blogs أو #/blog/:writerSlug
   if (first === 'blogs' || first === 'blog' || first === 'writers' || first === 'writer') {
@@ -79,17 +82,16 @@ export function parseHashRoute(hash: string): RouteState {
   }
 
   // مسار المقال: #/post/:slug أو #/article/:slug
+  // نحافظ على الـ slug المطلوب في الرابط حتى لو لم تكتمل مزامنة Firestore بعد عند أول فتح للرابط المباشر
   if (first === 'post' || first === 'article') {
-    const matchedArticle = siteArticles.find((a) => a.slug === second);
-    if (matchedArticle) {
+    if (second) {
       return {
         page: 'article-detail',
-        articleSlug: matchedArticle.slug,
+        articleSlug: second,
         categorySlug: null,
         writerSlug: null,
       };
     }
-    // إذا كان الـ slug غير موجود نعود بأمان للرئيسية بدلاً من صفحة فارغة
     return { page: 'home', articleSlug: defaultSlug, categorySlug: null, writerSlug: null };
   }
 
@@ -101,7 +103,7 @@ export function parseHashRoute(hash: string): RouteState {
     return {
       page: 'articles',
       articleSlug: defaultSlug,
-      categorySlug: validCategory ? validCategory.slug : null,
+      categorySlug: validCategory ? validCategory.slug : second || null,
       writerSlug: null,
     };
   }
@@ -112,8 +114,8 @@ export function parseHashRoute(hash: string): RouteState {
     return {
       page: 'categories',
       articleSlug: defaultSlug,
-      categorySlug: validCategory ? validCategory.slug : null,
-      writerSlug: null,
+      categorySlug: validCategory ? validCategory.slug : second || null,
+    writerSlug: null,
     };
   }
 

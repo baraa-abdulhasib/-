@@ -58,11 +58,11 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({
                 href={buildHashPath({ page: 'home' })}
                 onClick={(e) => {
                   e.preventDefault();
-                  onSelectWriter(null);
+                  window.location.hash = buildHashPath({ page: 'home' });
                 }}
                 className="hover:text-[#E05324] transition-colors"
               >
-                بصائر
+                {config.brandWordmark}
               </a>
               <span>/</span>
               <a
@@ -105,7 +105,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="font-ui inline-flex items-center gap-1 px-3 py-1 text-xs font-bold bg-[#E05324]/10 text-[#E05324] dark:bg-[#E05324]/20 dark:text-[#F06438] rounded-full">
-                    مدوّنة خاصة في بصائر
+                    مدوّنة خاصة في {config.brandWordmark}
                   </span>
                   <span className="font-ui text-xs text-[#78736A] dark:text-[#8A847A]">
                     {writerArticles.length} مقال منشور
@@ -194,7 +194,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({
             فضاءات الفكر والمعرفة
           </span>
           <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-[#141413] dark:text-[#F5F3EF]">
-            مدوّنات بصائر
+            مدوّنات {config.brandWordmark}
           </h1>
           <p className="font-serif text-lg sm:text-xl text-[#78736A] dark:text-[#8A847A] max-w-2xl mx-auto mt-4 leading-relaxed">
             منصة تجمع مدونات مستقلة لكوكبة من الكتاب والباحثين في الفكر الإسلامي،

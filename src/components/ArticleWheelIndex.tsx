@@ -309,7 +309,7 @@ export const ArticleWheelIndex: React.FC<ArticleWheelIndexProps> = ({
   useEffect(() => {
     activeCenterIndexRef.current = -1;
     applyWheelTransforms(currentPosRef.current);
-  }, [isDarkTheme, applyWheelTransforms]);
+  }, [isDarkTheme, headings.length, applyWheelTransforms]);
 
   // حلقة التحريك الفيزيائي السلس المعتمدة على الزمن الحقيقي (Delta-Time Smooth Physics)
   const startAnimationLoop = useCallback(() => {
@@ -428,6 +428,12 @@ export const ArticleWheelIndex: React.FC<ArticleWheelIndexProps> = ({
   useEffect(() => {
     activeCenterIndexRef.current = -1;
     applyWheelTransforms(currentPosRef.current);
+    const maxIdx = Math.max(0, headings.length - 1);
+    const clampedPos = Math.min(maxIdx, Math.max(0, currentPosRef.current));
+    currentPosRef.current = clampedPos;
+    targetPosRef.current = Math.min(maxIdx, Math.max(0, targetPosRef.current));
+    setSettledIndex((prev) => Math.min(maxIdx, Math.max(0, prev)));
+    applyWheelTransforms(clampedPos);
   }, [headings, applyWheelTransforms]);
 
   // تنظيف المؤقتات عند إزالة المكون
@@ -636,7 +642,7 @@ export const ArticleWheelIndex: React.FC<ArticleWheelIndexProps> = ({
               الفهرس
             </span>
             <span className="font-ui text-[9.5px] sm:text-[10px] font-extrabold text-[#E05324] dark:text-[#FFD24C]/90 tabular-nums whitespace-nowrap">
-              {settledIndex + 1}/{count}
+              {Math.min(count, Math.max(1, settledIndex + 1))}/{count}
             </span>
           </div>
         </button>
@@ -646,7 +652,9 @@ export const ArticleWheelIndex: React.FC<ArticleWheelIndexProps> = ({
       <div
         ref={wheelOverlayRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal={isOpen ? true : undefined}
+        aria-hidden={isOpen ? undefined : true}
+        inert={!isOpen}
         aria-label="فهرس محاور المقال"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

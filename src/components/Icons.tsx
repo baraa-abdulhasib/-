@@ -304,7 +304,8 @@ export const BasairSunburstTrio: React.FC<{
 
   return (
     <div
-      role="presentation"
+      role="separator"
+      aria-orientation="horizontal"
       onClick={triggerInteractiveWave}
       onTouchStart={triggerInteractiveWave}
       title="إشراق بصائر"

@@ -216,6 +216,7 @@ service cloud.firestore {
         isValidId(data.id) &&
         data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
         data.email is string && data.email.size() >= 3 && data.email.size() <= 320 &&
+        data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') &&
         data.message is string && data.message.size() >= 1 && data.message.size() <= 5000 &&
         data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64 &&
         data.read is bool;
@@ -316,22 +317,37 @@ service cloud.firestore {
     match /site_analytics/{analyticsId} {
       allow get: if isValidId(analyticsId) && analyticsId == 'main';
       allow list: if isAdmin();
-      allow create: if isValidId(analyticsId) && analyticsId == 'main' && isValidSiteAnalytics(incoming());
+      allow create: if isValidId(analyticsId) && analyticsId == 'main' && isValidSiteAnalytics(incoming()) && (
+        isAdmin() || (
+          incoming().totalSiteVisits <= 5000 &&
+          incoming().uniqueVisitors <= 5000
+        )
+      );
       allow update: if isValidId(analyticsId) && analyticsId == 'main' && isValidSiteAnalytics(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly([
-          'totalSiteVisits',
-          'uniqueVisitors',
-          'avgSessionDurationSeconds',
-          'avgCompletionRate',
-          'newsletterSubscribersCount',
-          'dailyStats',
-          'articleViews',
-          'articleReadsCompleted',
-          'writerVisits',
-          'categoryVisits',
-          'trafficSources',
-          'lastUpdated'
-        ]) || isAdmin()
+        isAdmin() || (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'totalSiteVisits',
+            'uniqueVisitors',
+            'avgSessionDurationSeconds',
+            'avgCompletionRate',
+            'newsletterSubscribersCount',
+            'dailyStats',
+            'articleViews',
+            'articleReadsCompleted',
+            'writerVisits',
+            'categoryVisits',
+            'trafficSources',
+            'lastUpdated'
+          ]) &&
+          incoming().totalSiteVisits >= existing().totalSiteVisits &&
+          incoming().totalSiteVisits <= existing().totalSiteVisits + 5 &&
+          incoming().uniqueVisitors >= existing().uniqueVisitors &&
+          incoming().uniqueVisitors <= existing().uniqueVisitors + 5 &&
+          incoming().newsletterSubscribersCount == existing().newsletterSubscribersCount &&
+          incoming().articleViews.size() >= existing().articleViews.size() &&
+          incoming().writerVisits.size() >= existing().writerVisits.size() &&
+          incoming().categoryVisits.size() >= existing().categoryVisits.size()
+        )
       );
       allow delete: if isAdmin() && isValidId(analyticsId);
     }

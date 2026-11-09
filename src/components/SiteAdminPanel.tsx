@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Eye,
   BookOpen,
-  Clock,
   Award,
   Plus,
   Edit3,
@@ -19,15 +18,11 @@ import {
   ArrowDown,
   Upload,
   RotateCcw,
-  Star,
   Layout,
   Sparkles,
-  Lock,
   LogOut,
-  Copy,
   Globe,
   Mail,
-  Bookmark,
   Cloud,
 } from 'lucide-react';
 import { Article, Category, SeriesItem, WriterBlog } from '../data/articles';
@@ -36,7 +31,7 @@ import {
   SiteAnalytics,
   SiteConfig,
   loadSiteAnalytics,
-  saveSiteAnalytics,
+  saveSiteConfig,
 } from '../utils/siteConfig';
 import { setStudioSessionActive } from '../utils/studioAuth';
 import {
@@ -79,9 +74,9 @@ type AdminSubTab =
 
 const AVATAR_PRESETS = [
   { id: 'baraa', label: 'هوية الكاتب ١ (برتقالي دافئ)', src: WRITER_AVATARS.baraa },
-  { id: 'shehri', label: 'هوية الكاتب ٢ (أخضر زمردي)', src: WRITER_AVATARS.shehri },
-  { id: 'abdali', label: 'هوية الكاتب ٣ (كحلي معرفي)', src: WRITER_AVATARS.abdali },
-  { id: 'hudhayri', label: 'هوية الكاتب ٤ (ذهبي تقني)', src: WRITER_AVATARS.hudhayri },
+  { id: 'emerald', label: 'هوية الكاتب ٢ (أخضر زمردي)', src: WRITER_AVATARS.emerald },
+  { id: 'navy', label: 'هوية الكاتب ٣ (كحلي معرفي)', src: WRITER_AVATARS.navy },
+  { id: 'gold', label: 'هوية الكاتب ٤ (ذهبي تقني)', src: WRITER_AVATARS.gold },
 ];
 
 const ARTWORK_PRESETS = [
@@ -200,11 +195,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
 
   // ترتيب الكُتّاب حسب عدد الزيارات والقراءات
   const rankedWriters = useMemo(() => {
-    const totalAllWriterVisits = Object.values(analytics.writerVisits).reduce(
-      (a, b) => a + b,
-      0
-    ) || 1;
-
     return siteConfig.writers
       .map((writer) => {
         const writerArticles = articles.filter(
@@ -216,20 +206,12 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
         );
         const directBlogVisits = analytics.writerVisits[writer.slug] || 0;
         const combinedVisits = Math.max(directBlogVisits, articleReadsSum);
-        const sharePercent =
-          combinedVisits === 0
-            ? 0
-            : Math.min(
-                100,
-                Math.round((combinedVisits / Math.max(totalAllWriterVisits, combinedVisits)) * 100)
-              );
 
         return {
           writer,
           articlesCount: writerArticles.length,
           visits: combinedVisits,
           articleReadsSum,
-          sharePercent,
         };
       })
       .sort((a, b) => b.visits - a.visits);
@@ -240,7 +222,8 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
     return [...articles]
       .map((art) => {
         const views = analytics.articleViews[art.slug] || 0;
-        const completion = analytics.articleReadsCompleted[art.slug] || 0;
+        const rawCompleted = analytics.articleReadsCompleted[art.slug] || 0;
+        const completion = views > 0 ? Math.min(100, Math.round((rawCompleted / views) * 100)) : Math.min(100, rawCompleted);
         return {
           article: art,
           views,
@@ -273,20 +256,33 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       .sort((a, b) => b.views - a.views);
   }, [siteConfig.categories, articles, analytics]);
 
-  // تحديث أو تعديل رقم زيارة مقال يدوياً عند رغبة المدير
-  const handleIncrementArticleViews = (slug: string, delta: number) => {
-    const next: SiteAnalytics = {
-      ...analytics,
-      totalSiteVisits: Math.max(0, analytics.totalSiteVisits + delta),
-      articleViews: {
-        ...analytics.articleViews,
-        [slug]: Math.max(0, (analytics.articleViews[slug] || 0) + delta),
-      },
-      lastUpdated: new Date().toISOString(),
+  // مؤشرات محسوبة فعلياً من بيانات الزيارات (بدون أرقام ثابتة أو تقديرية)
+  const todayVisits = useMemo(() => {
+    const labels = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const todayLabel = labels[new Date().getDay()];
+    return analytics.dailyStats.find((d) => d.dayLabel === todayLabel)?.visits || 0;
+  }, [analytics.dailyStats]);
+
+  const totalCompletedReads = useMemo(
+    () =>
+      Object.values(analytics.articleReadsCompleted || {}).reduce(
+        (sum, n) => sum + (Number(n) || 0),
+        0
+      ),
+    [analytics.articleReadsCompleted]
+  );
+
+  const trafficPct = useMemo(() => {
+    const src = analytics.trafficSources || { direct: 0, search: 0, social: 0, referral: 0 };
+    const total = (src.direct || 0) + (src.search || 0) + (src.social || 0) + (src.referral || 0);
+    const pct = (n: number) => (total > 0 ? Math.round(((n || 0) / total) * 100) : 0);
+    return {
+      total,
+      direct: pct(src.direct),
+      search: pct(src.search),
+      socialReferral: pct((src.social || 0) + (src.referral || 0)),
     };
-    setAnalytics(next);
-    saveSiteAnalytics(next);
-  };
+  }, [analytics.trafficSources]);
 
   // ==================== 2. حالة إدارة الكُتّاب والمدونات ====================
   const [editingWriter, setEditingWriter] = useState<WriterBlog | null>(null);
@@ -300,7 +296,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
     bio: string;
     topicsText: string;
     location: string;
-    followersCount: string;
     avatar: string;
   }>({
     name: '',
@@ -311,7 +306,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
     bio: '',
     topicsText: '',
     location: '',
-    followersCount: '',
     avatar: WRITER_AVATARS.baraa,
   });
 
@@ -326,8 +320,7 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       bio: '',
       topicsText: '',
       location: '',
-      followersCount: '٣.٥ آلاف قارئ',
-      avatar: WRITER_AVATARS.shehri,
+      avatar: WRITER_AVATARS.emerald,
     });
     setIsAddingWriter(true);
   };
@@ -344,7 +337,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       bio: w.bio,
       topicsText: w.topics.join('، '),
       location: w.location || '',
-      followersCount: w.followersCount || '١٠ آلاف قارئ',
       avatar: w.avatar,
     });
   };
@@ -369,7 +361,18 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       writerForm.slug
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9-_]/g, '-') || `writer-${Date.now().toString().slice(-4)}`;
+        .replace(/[^a-z0-9\u0600-\u06FF-_]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '') || `writer-${Date.now().toString().slice(-4)}`;
+
+    if (
+      siteConfig.writers.some(
+        (w) => w.slug === cleanSlug && (!editingWriter || w.id !== editingWriter.id)
+      )
+    ) {
+      showToast('هذا المعرّف (slug) مستخدم بالفعل لكاتب آخر');
+      return;
+    }
 
     const topics = writerForm.topicsText
       .split(/[،,]/)
@@ -387,14 +390,39 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
         bio: writerForm.bio.trim(),
         topics: topics.length > 0 ? topics : ['الشريعة والحياة'],
         location: writerForm.location.trim(),
-        followersCount: writerForm.followersCount.trim(),
         avatar: writerForm.avatar,
       };
 
       const nextWriters = siteConfig.writers.map((w) =>
         w.id === editingWriter.id ? updatedWriter : w
       );
-      onUpdateSiteConfig({ ...siteConfig, writers: nextWriters });
+      const nextDefaultWriterSlug =
+        siteConfig.defaultWriterSlug === editingWriter.slug
+          ? updatedWriter.slug
+          : siteConfig.defaultWriterSlug;
+      onUpdateSiteConfig({
+        ...siteConfig,
+        writers: nextWriters,
+        defaultWriterSlug: nextDefaultWriterSlug,
+      });
+      articles.forEach((art) => {
+        const artWriterSlug = art.authorSlug || art.author.slug;
+        if (artWriterSlug === editingWriter.slug) {
+          onUpdateArticle({
+            ...art,
+            authorSlug: updatedWriter.slug,
+            blogTitle: updatedWriter.blogTitle,
+            author: {
+              ...art.author,
+              slug: updatedWriter.slug,
+              name: updatedWriter.name,
+              role: updatedWriter.role,
+              bio: updatedWriter.bio,
+              avatar: updatedWriter.avatar,
+            },
+          });
+        }
+      });
       setEditingWriter(null);
       showToast(`تم تحديث بيانات «${updatedWriter.blogTitle}» بنجاح`);
     } else {
@@ -408,9 +436,8 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
         bio: writerForm.bio.trim() || 'كاتب وباحث مشارك في منصة بصائر.',
         topics: topics.length > 0 ? topics : ['الفكر الإسلامي', 'الشريعة والحياة'],
         location: writerForm.location.trim(),
-        followersCount: writerForm.followersCount.trim(),
         avatar: writerForm.avatar,
-        verified: true,
+        verified: false,
       };
 
       onUpdateSiteConfig({
@@ -484,7 +511,18 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       catForm.slug
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9-_]/g, '-') || `cat-${Date.now().toString().slice(-4)}`;
+        .replace(/[^a-z0-9\u0600-\u06FF-_]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '') || `cat-${Date.now().toString().slice(-4)}`;
+
+    if (
+      siteConfig.categories.some(
+        (c) => c.slug === cleanSlug && (!editingCategory || c.id !== editingCategory.id)
+      )
+    ) {
+      showToast('هذا المعرّف (slug) مستخدم بالفعل لتصنيف آخر');
+      return;
+    }
 
     if (editingCategory) {
       const nextCats = siteConfig.categories.map((c) =>
@@ -499,7 +537,19 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
             }
           : c
       );
-      onUpdateSiteConfig({ ...siteConfig, categories: nextCats });
+      const nextSeries = siteConfig.series.map((s) =>
+        s.categorySlug === editingCategory.slug ? { ...s, categorySlug: cleanSlug } : s
+      );
+      onUpdateSiteConfig({ ...siteConfig, categories: nextCats, series: nextSeries });
+      articles.forEach((art) => {
+        if (art.categorySlug === editingCategory.slug) {
+          onUpdateArticle({
+            ...art,
+            categorySlug: cleanSlug,
+            categoryName: catForm.name.trim(),
+          });
+        }
+      });
       setEditingCategory(null);
       showToast('تم تحديث التصنيف الموضوعي');
     } else {
@@ -538,8 +588,8 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
     title: '',
     subtitle: '',
     categorySlug: siteConfig.categories[0]?.slug || 'maqasid',
-    countLabel: 'سلسلة من ٥ أجزاء',
-    badgeText: 'سلسلة محكّمة',
+    countLabel: '',
+    badgeText: '',
     coverArt: ARTICLE_ARTWORKS.maqasidHero,
   });
 
@@ -549,8 +599,8 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
       title: '',
       subtitle: '',
       categorySlug: siteConfig.categories[0]?.slug || 'maqasid',
-      countLabel: 'سلسلة من ٤ أجزاء',
-      badgeText: 'زاوية خاصة',
+      countLabel: '',
+      badgeText: '',
       coverArt: ARTICLE_ARTWORKS.shatibiTurath,
     });
     setIsAddingSeries(true);
@@ -686,8 +736,13 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                 type="button"
                 onClick={async () => {
                   try {
-                    await signInAdminWithGoogle();
-                    showToast('تم الاتصال سحابياً بـ Firebase بنجاح');
+                    const user = await signInAdminWithGoogle();
+                    if (isCurrentUserAdmin(user)) {
+                      showToast('تم الاتصال سحابياً بـ Firebase بنجاح');
+                    } else {
+                      await signOutAdmin();
+                      showToast('هذا الحساب غير مصرح له كمشرف');
+                    }
                   } catch {
                     showToast('تعذر تسجيل الدخول عبر جوجل');
                   }
@@ -753,11 +808,11 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                 </span>
                 <span className="font-ui inline-flex items-center gap-1 rounded-lg bg-[#142822]/10 dark:bg-[#F5B800]/15 px-2 py-0.5 text-[12px] font-bold text-[#1E6B4E] dark:text-[#F5B800]">
                   <TrendingUp className="w-3.5 h-3.5" />
-                  +١٨.٤٪ هذا الشهر
+                  {todayVisits.toLocaleString('ar-EG')} زيارة اليوم
                 </span>
               </div>
               <p className="font-ui mt-2 text-[12.5px] text-[#78736A]">
-                الزوار الفريدون: {analytics.uniqueVisitors.toLocaleString('ar-EG')} زائر
+                الجلسات الفريدة: {analytics.uniqueVisitors.toLocaleString('ar-EG')} جلسة
               </p>
             </div>
 
@@ -776,11 +831,11 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                   {totalArticleReads.toLocaleString('ar-EG')}
                 </span>
                 <span className="font-ui text-[12.5px] font-bold text-[#E05324]">
-                  {analytics.avgCompletionRate}٪ معدل إتمام القراءة
+                  {totalArticleReads > 0 ? Math.min(100, Math.round((totalCompletedReads / totalArticleReads) * 100)) : 0}٪ معدل إتمام القراءة
                 </span>
               </div>
               <p className="font-ui mt-2 text-[12.5px] text-[#78736A]">
-                متوسط بقاء القارئ: ٤ دقائق و ٢٨ ثانية
+                قراءات مكتملة (بلغت ٩٠٪ من المقال): {totalCompletedReads.toLocaleString('ar-EG')}
               </p>
             </div>
 
@@ -885,9 +940,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
-                        <span className="font-ui text-[11.5px] font-bold text-[#78736A] tabular-nums w-24 text-left">
-                          {item.writer.followersCount || '١٠ آلاف متابع'}
-                        </span>
                       </div>
                     </div>
                   );
@@ -955,24 +1007,24 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                   <div>
                     <div className="flex justify-between font-bold mb-1">
                       <span>الوصول المباشر والمرجعيات المحفوظة</span>
-                      <span className="tabular-nums">{analytics.trafficSources.direct}٪</span>
+                      <span className="tabular-nums">{trafficPct.direct}٪</span>
                     </div>
                     <div className="h-2 rounded-full bg-[#EFECE6] dark:bg-[#2A2724]">
                       <div
                         className="h-full rounded-full bg-[#141413] dark:bg-[#F5F3EF]"
-                        style={{ width: `${analytics.trafficSources.direct}%` }}
+                        style={{ width: `${trafficPct.direct}%` }}
                       />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between font-bold mb-1">
                       <span>محركات البحث (Google & الباحث العلمي)</span>
-                      <span className="tabular-nums">{analytics.trafficSources.search}٪</span>
+                      <span className="tabular-nums">{trafficPct.search}٪</span>
                     </div>
                     <div className="h-2 rounded-full bg-[#EFECE6] dark:bg-[#2A2724]">
                       <div
                         className="h-full rounded-full bg-[#E05324]"
-                        style={{ width: `${analytics.trafficSources.search}%` }}
+                        style={{ width: `${trafficPct.search}%` }}
                       />
                     </div>
                   </div>
@@ -980,16 +1032,14 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                     <div className="flex justify-between font-bold mb-1">
                       <span>منصات التواصل والنشرات البريدية</span>
                       <span className="tabular-nums">
-                        {analytics.trafficSources.social + analytics.trafficSources.referral}٪
+                        {trafficPct.socialReferral}٪
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-[#EFECE6] dark:bg-[#2A2724]">
                       <div
                         className="h-full rounded-full bg-[#F5B800]"
                         style={{
-                          width: `${
-                            analytics.trafficSources.social + analytics.trafficSources.referral
-                          }%`,
+                          width: `${trafficPct.socialReferral}%`,
                         }}
                       />
                     </div>
@@ -1070,14 +1120,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                           <span className="font-extrabold text-[15.5px] text-[#141413] dark:text-[#F5F3EF] tabular-nums">
                             {item.views.toLocaleString('ar-EG')}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleIncrementArticleViews(item.article.slug, 100)}
-                            title="زيادة ١٠٠ قراءة"
-                            className="rounded-md bg-[#EFECE6] dark:bg-[#252320] px-1.5 py-0.5 text-[11px] font-bold text-[#78736A] hover:text-[#E05324]"
-                          >
-                            +١٠٠
-                          </button>
                         </div>
                       </td>
                       <td className="py-4 px-3">
@@ -1328,18 +1370,6 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                     value={writerForm.topicsText}
                     onChange={(e) => setWriterForm({ ...writerForm, topicsText: e.target.value })}
                     placeholder="مقاصد الشريعة، فقه الواقع، التزكية"
-                    className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-[#F9F7F2] dark:bg-[#121110] px-4 py-2.5 text-[14.5px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-bold mb-1.5">عدد القراء / المتابعين</label>
-                  <input
-                    type="text"
-                    value={writerForm.followersCount}
-                    onChange={(e) =>
-                      setWriterForm({ ...writerForm, followersCount: e.target.value })
-                    }
-                    placeholder="مثال: ١٢.٤ ألف قارئ"
                     className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-[#F9F7F2] dark:bg-[#121110] px-4 py-2.5 text-[14.5px]"
                   />
                 </div>
@@ -1710,7 +1740,7 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold mb-1">وسم العدد (Count Label)</label>
+                    <label className="block text-[13px] font-bold mb-1">وسم العدد (يُستبدل تلقائياً بعدد المقالات المنشورة في السلسلة)</label>
                     <input
                       type="text"
                       value={seriesForm.countLabel}
@@ -1725,7 +1755,7 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                       type="text"
                       value={seriesForm.badgeText}
                       onChange={(e) => setSeriesForm({ ...seriesForm, badgeText: e.target.value })}
-                      placeholder="سلسلة محكّمة"
+                      placeholder="مثال: زاوية خاصة"
                       className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-white dark:bg-[#191816] px-3.5 py-2 text-[14px]"
                     />
                   </div>
@@ -1795,7 +1825,12 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
                     <div className="absolute bottom-3 right-3 left-3">
                       <span className="font-ui text-[11px] font-bold text-[#F5B800]">
-                        {s.countLabel}
+                        {(() => {
+                          const n = articles.filter(
+                            (a) => (a.seriesName || '').trim() === s.title.trim()
+                          ).length;
+                          return n > 0 ? `${n.toLocaleString('ar-EG')} مقالات منشورة` : s.countLabel;
+                        })()}
                       </span>
                       <h4 className="font-display text-[17px] font-bold">{s.title}</h4>
                     </div>
@@ -2058,11 +2093,11 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                   <input
                     type="url"
                     dir="ltr"
-                    value={siteConfig.telegramUrl || 'https://t.me/BasairPlatform'}
+                    value={siteConfig.telegramUrl ?? ''}
                     onChange={(e) =>
                       onUpdateSiteConfig({ ...siteConfig, telegramUrl: e.target.value })
                     }
-                    placeholder="https://t.me/BasairPlatform"
+                    placeholder="https://t.me/اسم_قناتك (اتركه فارغاً لإخفاء زر تليجرام)"
                     className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-[#F9F7F2] dark:bg-[#121110] px-4 py-2.5 text-[14px] text-left"
                   />
                 </div>
@@ -2231,7 +2266,20 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
               </button>
 
               <span className="text-[13px] font-bold text-[#1E6B4E] dark:text-[#F5B800]">
-                ✓ يتم حفظ جميع التغييرات تلقائياً وبشكل فوري
+                ✓ يُحفظ تلقائياً مع تأخير ذكي (Debounce)
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  saveSiteConfig(siteConfig, false, true);
+                  showToast('تم حفظ إعدادات الهوية سحابياً بنجاح');
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#141413] dark:bg-[#F5F3EF] px-4 py-2 text-[13px] font-bold text-[#F9F7F2] dark:text-[#141413] hover:opacity-90 cursor-pointer"
+              >
+                <Check className="w-4 h-4 text-[#F5B800] dark:text-[#E05324]" />
+                <span>حفظ الآن</span>
+              </button>
+              <span className="hidden">
               </span>
             </div>
           </div>
@@ -2261,7 +2309,9 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                   dir="ltr"
                   className="rounded-lg bg-[#EFECE6] dark:bg-[#23201D] px-3 py-1 text-[13px] font-bold text-[#141413] dark:text-[#F5F3EF]"
                 >
-                  {BOOTSTRAPPED_ADMIN_EMAIL}
+                  {isCurrentUserAdmin(firebaseUser)
+                    ? BOOTSTRAPPED_ADMIN_EMAIL
+                    : 'محمي (يظهر للمشرف الموثّق فقط)'}
                 </code>
               </div>
 
@@ -2279,7 +2329,14 @@ export const SiteAdminPanel: React.FC<SiteAdminPanelProps> = ({
                     type="button"
                     onClick={() => {
                       signInAdminWithGoogle()
-                        .then(() => showToast('تم تسجيل الدخول بحساب المشرف بنجاح'))
+                        .then(async (user) => {
+                          if (isCurrentUserAdmin(user)) {
+                            showToast('تم تسجيل الدخول بحساب المشرف بنجاح');
+                          } else {
+                            await signOutAdmin();
+                            showToast('هذا الحساب غير مصرح له كمشرف');
+                          }
+                        })
                         .catch(() => showToast('تعذر تسجيل الدخول عبر جوجل'));
                     }}
                     className="rounded-xl bg-[#142822] text-[#F9F7F2] px-3.5 py-1.5 text-[12.5px] font-bold cursor-pointer"

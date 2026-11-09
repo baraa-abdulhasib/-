@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bookmark, Clock } from 'lucide-react';
 import { Article } from '../data/articles';
 import { CuratedStarIcon } from './Icons';
@@ -23,19 +23,25 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   onToggleBookmark,
 }) => {
   const [imgError, setImgError] = useState(false);
+  const hasValidCoverImage = Boolean(article.coverImage?.trim()) && !imgError;
+  useEffect(() => {
+    setImgError(false);
+  }, [article.coverImage]);
   const postHref = `#/post/${article.slug}`;
   const categoryHref = `#/category/${article.categorySlug}`;
-  const writerSlug = article.authorSlug || article.author.slug || 'baraa';
-  const blogHref = `#/blog/${writerSlug}`;
+  const writerSlug = article.authorSlug || article.author.slug || '';
+  const blogHref = writerSlug ? `#/blog/${writerSlug}` : '#/blogs';
   const blogTitle = article.blogTitle || `مدونة ${article.author.name}`;
 
   const handleArticleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     onSelectArticle(article.slug);
   };
 
   const handleCategoryClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.stopPropagation();
     if (onSelectCategory) {
       onSelectCategory(article.categorySlug);
@@ -44,6 +50,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
 
   const handleBlogClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.stopPropagation();
     if (onSelectWriterBlog) {
       onSelectWriterBlog(writerSlug);
@@ -66,7 +73,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
               onClick={handleArticleClick}
               className="block relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden rounded-[22px] bg-[#EFECE6] dark:bg-[#1D1B19]"
             >
-              {!imgError ? (
+              {hasValidCoverImage ? (
                 <img
                   src={article.coverImage}
                   alt={article.title}
@@ -183,7 +190,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             onClick={handleArticleClick}
             className="block relative aspect-[16/10] w-full overflow-hidden rounded-[18px] bg-[#EFECE6] dark:bg-[#1D1B19] mb-4"
           >
-            {!imgError ? (
+            {hasValidCoverImage ? (
               <img
                 src={article.coverImage}
                 alt={article.title}
@@ -278,7 +285,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         onClick={handleArticleClick}
         className="block relative h-[96px] w-[96px] sm:h-[124px] sm:w-[124px] shrink-0 overflow-hidden rounded-[18px] bg-[#EFECE6] dark:bg-[#1D1B19]"
       >
-        {!imgError ? (
+        {hasValidCoverImage ? (
           <img
             src={article.coverImage}
             alt={article.title}

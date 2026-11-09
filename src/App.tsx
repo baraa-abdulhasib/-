@@ -52,6 +52,18 @@ import {
   saveSiteConfigToFirestore,
 } from './firebase';
 
+function getArticleTimestamp(article: Article & { updatedAt?: string }): number {
+  if (article.updatedAt) {
+    const parsed = Date.parse(article.updatedAt);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  const match = String(article.id || '').match(/(\d{10,})/);
+  if (match) {
+    return Number(match[1]);
+  }
+  return 0;
+}
+
 export default function App() {
   // 1. إدارة الوضع الفاتح والداكن مع الحفظ في localStorage
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -82,12 +94,14 @@ export default function App() {
   // 2. إدارة جميع مقالات الموقع وإعدادات المنصة الشاملة مع مزامنة سحابية فورية (Firebase Firestore)
   const [siteArticles, setSiteArticles] = useState<Article[]>(() => loadSiteArticles());
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => loadSiteConfig());
+  const [isCloudArticlesLoaded, setIsCloudArticlesLoaded] = useState<boolean>(false);
 
   const allArticles = useMemo(() => siteArticles, [siteArticles]);
 
   // الاشتراك اللحظي في قاعدة بيانات Firebase Firestore (المقالات + إعدادات المنصة + الإحصائيات)
   useEffect(() => {
     let hasCloudConfig = false;
+    let hasRecordedInitialVisit = false;
 
     const unsubArticles = onSnapshot(
       collection(db, 'articles'),
@@ -112,16 +126,18 @@ export default function App() {
             a.slug !== 'basair-complete-editorial-showcase'
         );
 
-        // ترتيب بحيث يكون المميز أولاً ثم الأحدث تحديثاً
+        // ترتيب بحيث يكون المميز أولاً ثم الأحدث إنشاءً/تحديثاً
         cloudArticles.sort((a, b) => {
           if (a.isFeatured && !b.isFeatured) return -1;
           if (!a.isFeatured && b.isFeatured) return 1;
-          return 0;
+          return getArticleTimestamp(b) - getArticleTimestamp(a);
         });
         setSiteArticles(cloudArticles);
         saveSiteArticles(cloudArticles);
+        setIsCloudArticlesLoaded(true);
       },
       (err) => {
+        setIsCloudArticlesLoaded(true);
         try {
           handleFirestoreError(err, OperationType.LIST, 'articles');
         } catch {
@@ -171,8 +187,16 @@ export default function App() {
         if (snap.exists()) {
           saveSiteAnalytics(snap.data() as SiteAnalytics, true);
         }
+        if (!hasRecordedInitialVisit) {
+          hasRecordedInitialVisit = true;
+          recordSiteVisit();
+        }
       },
       (err) => {
+        if (!hasRecordedInitialVisit) {
+          hasRecordedInitialVisit = true;
+          recordSiteVisit(true);
+        }
         try {
           handleFirestoreError(err, OperationType.GET, 'site_analytics/main');
         } catch {
@@ -207,11 +231,6 @@ export default function App() {
     const restored = resetSiteConfigToDefault();
     setSiteConfig(restored);
   };
-
-  // تسجيل زيارة الموقع عند فتح الجلسة
-  useEffect(() => {
-    recordSiteVisit();
-  }, []);
 
   // 3. إدارة التوجيه عبر Hash Routing بالكامل
   const initialRoute = useMemo(() => parseHashRoute(window.location.hash), []);
@@ -385,7 +404,7 @@ export default function App() {
 
   const handleSelectArticle = (slug: string) => {
     const matched = allArticles.find((a) => a.slug === slug);
-    recordArticleView(slug, matched?.author.slug, matched?.categorySlug);
+    recordArticleView(slug, matched?.authorSlug || matched?.author.slug, matched?.categorySlug);
 
     const targetHash = buildHashPath('article-detail', { articleSlug: slug });
     if (window.location.hash !== targetHash) {
@@ -433,10 +452,10 @@ export default function App() {
     );
   }, [searchQuery, allArticles]);
 
-  const activeArticle = useMemo(
-    () => allArticles.find((a) => a.slug === activeArticleSlug) || allArticles[0] || null,
-    [activeArticleSlug, allArticles]
-  );
+  const activeArticle = useMemo(() => {
+    if (!activeArticleSlug) return allArticles[0] || null;
+    return allArticles.find((a) => a.slug === activeArticleSlug) || null;
+  }, [activeArticleSlug, allArticles]);
 
   const relatedArticles = useMemo(() => {
     if (!activeArticle) return [];
@@ -540,18 +559,48 @@ export default function App() {
           />
         )}
 
-        {currentPage === 'article-detail' && activeArticle && (
-          <ArticlePage
-            article={activeArticle}
-            relatedArticles={relatedArticles}
-            onBack={() => handleNavigate('home', null)}
-            onSelectArticle={handleSelectArticle}
-            onSelectCategory={(catSlug) => handleNavigate('categories', catSlug)}
-            onSelectWriterBlog={handleSelectWriterBlog}
-            isBookmarked={bookmarkedIds.includes(activeArticle.id)}
-            onToggleBookmark={handleToggleBookmark}
-          />
-        )}
+        {currentPage === 'article-detail' &&
+          (activeArticle ? (
+            <ArticlePage
+              article={activeArticle}
+              relatedArticles={relatedArticles}
+              onBack={() => handleNavigate('home', null)}
+              onSelectArticle={handleSelectArticle}
+              onSelectCategory={(catSlug) => handleNavigate('categories', catSlug)}
+              onSelectWriterBlog={handleSelectWriterBlog}
+              isBookmarked={bookmarkedIds.includes(activeArticle.id)}
+              bookmarkedIds={bookmarkedIds}
+              onToggleBookmark={handleToggleBookmark}
+              siteConfig={siteConfig}
+            />
+          ) : !isCloudArticlesLoaded ? (
+            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-20 text-center">
+              <p className="font-prose text-[18px] text-[#78736A] dark:text-[#8A847A]">
+                جاري تحميل المقال...
+              </p>
+            </div>
+          ) : (
+            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16">
+              <div className="rounded-[24px] bg-[#EFECE6]/60 dark:bg-[#1D1B19] p-10 text-center border border-[#E6E2D8] dark:border-[#2A2724]">
+                <p className="font-prose text-[20px] font-bold text-[#141413] dark:text-[#F5F3EF]">
+                  المقال المطلوب غير متوفر حالياً
+                </p>
+                <p className="font-prose mt-2 text-[15.5px] text-[#78736A] dark:text-[#8A847A]">
+                  ربما تم نقل المقال أو حذفه، أو أن الرابط غير مكتمل.
+                </p>
+                <a
+                  href="#/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigate('home', null);
+                  }}
+                  className="font-ui inline-block mt-6 rounded-xl bg-[#141413] dark:bg-[#F5F3EF] px-5 py-2.5 text-[14.5px] font-bold text-[#F9F7F2] dark:text-[#141413]"
+                >
+                  العودة إلى الصفحة الرئيسية
+                </a>
+              </div>
+            </div>
+          ))}
 
         {currentPage === 'articles' && (
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">

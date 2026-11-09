@@ -30,10 +30,17 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ siteConfig
   const [copied, setCopied] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
 
-  const telegramUrl = (config.telegramUrl || 'https://t.me/BasairPlatform').trim();
+  const rawTelegram = (config.telegramUrl || '').trim();
+  const hasTelegram = rawTelegram.length > 0;
+  const telegramUrl = rawTelegram.startsWith('@')
+    ? `https://t.me/${rawTelegram.slice(1)}`
+    : /^https?:\/\//i.test(rawTelegram)
+    ? rawTelegram
+    : `https://${rawTelegram}`;
+  const telegramShortDisplay =
+    telegramUrl.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
   const telegramHandle =
-    telegramUrl.replace(/^https?:\/\/(www\.)?t\.me\//i, '@').replace(/\/$/, '') ||
-    '@BasairPlatform';
+    telegramUrl.replace(/^https?:\/\/(www\.)?t\.me\//i, '@').replace(/\/$/, '');
 
   const handleCopyChannelLink = async () => {
     try {
@@ -123,6 +130,7 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ siteConfig
           </p>
 
           {/* 4. أزرار التفاعل: زر الانضمام لقناة تليجرام + زر نسخ رابط القناة للمشاركة */}
+          {hasTelegram && (
           <div className="font-ui mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             {/* الزر الرئيسي: الانتقال المباشر إلى قناة تليجرام مع تأثير حركي أنيق */}
             <a
@@ -178,6 +186,7 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ siteConfig
               )}
             </button>
           </div>
+          )}
 
           {/* 5. المنصات الإضافية المستقبلية (تظهر تلقائياً عند تفعيل أي منصة من لوحة الإدارة) */}
           {additionalPlatforms.length > 0 && (
@@ -199,15 +208,17 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ siteConfig
           )}
 
           {/* سطر ختامي هادئ أسفل الأزرار */}
+          {hasTelegram && (
           <p className="font-ui mt-5 text-[13px] text-[#8A847A] flex flex-wrap items-center justify-center gap-2">
             <span>قناة رسمية هادئة</span>
             <span aria-hidden="true">•</span>
             <span dir="ltr" className="text-[#D6CEBE] font-semibold">
-              t.me/BasairPlatform
+              {telegramShortDisplay}
             </span>
             <span aria-hidden="true">•</span>
             <span>بدون ضجيج أو رسائل دعائية</span>
           </p>
+          )}
         </div>
       </div>
     </section>

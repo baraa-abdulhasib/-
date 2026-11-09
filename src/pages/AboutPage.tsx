@@ -17,11 +17,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, siteConfig }) 
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !message.trim() || sending) return;
     setSending(true);
+    setErrorMsg(null);
     try {
       await submitContactMessageToFirestore(name, email, message);
       setSent(true);
@@ -29,8 +31,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, siteConfig }) 
       setEmail('');
       setMessage('');
     } catch {
-      // fallback if offline
-      setSent(true);
+      setErrorMsg('تعذر إرسال الرسالة حالياً. يرجى التحقق من البيانات أو المحاولة لاحقاً.');
     } finally {
       setSending(false);
     }
@@ -236,12 +237,16 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, siteConfig }) 
                   className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-[#F9F7F2] dark:bg-[#121110] px-4 py-3 text-[15px] focus:border-[#141413] dark:focus:border-[#F5F3EF] focus:outline-none"
                 />
               </div>
+              {errorMsg && (
+                <p className="text-[14px] font-bold text-[#E05324]">{errorMsg}</p>
+              )}
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#141413] dark:bg-[#F5F3EF] px-6 py-3 text-[15px] font-bold text-[#F9F7F2] dark:text-[#141413] hover:opacity-90 transition-opacity"
+                disabled={sending}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#141413] dark:bg-[#F5F3EF] px-6 py-3 text-[15px] font-bold text-[#F9F7F2] dark:text-[#141413] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
-                <span>إرسال الرسالة</span>
+                <span>{sending ? 'جارٍ الإرسال...' : 'إرسال الرسالة'}</span>
               </button>
             </form>
           )}

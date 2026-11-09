@@ -51,7 +51,6 @@ export interface WriterBlog {
   bio: string;
   topics: string[];
   location?: string;
-  followersCount?: string;
   verified?: boolean;
 }
 
@@ -98,7 +97,6 @@ export const WRITER_BLOGS: WriterBlog[] = [
     bio: 'باحث مهتم بربط الكليات الشرعية وأصول الفقه بأسئلة الإنسان المعاصر وتحولات الاجتماع والتقنية، الساعي إلى الجمع بين رسوخ التأصيل وبصيرة التنزيل.',
     topics: ['مقاصد الشريعة', 'فقه الواقع', 'التزكية الأخلاقية', 'الفكر الإسلامي'],
     location: '',
-    followersCount: '',
     verified: true,
   },
 ];

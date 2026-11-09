@@ -14,7 +14,7 @@ import { ArticleCard } from '../components/ArticleCard';
 import { NewsletterSection } from '../components/NewsletterSection';
 import { ArticleWheelIndex, WheelHeadingItem } from '../components/ArticleWheelIndex';
 import { enhanceQuranicVersesInHtml } from '../utils/quranVerse';
-import { loadSiteConfig } from '../utils/siteConfig';
+import { SiteConfig, loadSiteConfig, recordArticleReadCompleted } from '../utils/siteConfig';
 
 interface ArticlePageProps {
   article: Article;
@@ -25,6 +25,8 @@ interface ArticlePageProps {
   onSelectWriterBlog?: (writerSlug: string | null) => void;
   isBookmarked: boolean;
   onToggleBookmark: (articleId: string, e: React.MouseEvent) => void;
+  bookmarkedIds?: string[];
+  siteConfig?: SiteConfig;
 }
 
 export const ArticlePage: React.FC<ArticlePageProps> = ({
@@ -36,12 +38,16 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
   onSelectWriterBlog,
   isBookmarked,
   onToggleBookmark,
+  bookmarkedIds = [],
+  siteConfig: siteConfigProp,
 }) => {
   const [readingProgress, setReadingProgress] = useState(0);
   const [fontScale, setFontScale] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [copied, setCopied] = useState(false);
   const [isWheelOpen, setIsWheelOpen] = useState(false);
-  const siteConfig = useMemo(() => loadSiteConfig(), []);
+  const siteConfig = useMemo(() => siteConfigProp || loadSiteConfig(), [siteConfigProp]);
+  const [coverImgError, setCoverImgError] = useState(false);
+  const hasRecordedCompletionRef = useRef(false);
 
   // استخراج محاور المقال لعجلة الفهرس التفاعلية (مع توليد محاور تلقائية إذا كان المقال المخصص قصيراً)
   const headings: WheelHeadingItem[] = useMemo(() => {
@@ -85,6 +91,8 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
     setActiveHeadingId(headings[0]?.id || '');
     setChapterProgresses(headings.map(() => 0));
     setIsWheelOpen(false);
+    setCoverImgError(false);
+    hasRecordedCompletionRef.current = false;
   }, [article.id, headings]);
 
   // الانتقال المباشر إلى محور معين عند الضغط على مقطعه في الشريط العلوي
@@ -129,6 +137,10 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
         Math.max(0, (scrollTop / articleMaxScroll) * 100)
       );
       setReadingProgress(overallProgress);
+      if (overallProgress >= 90 && !hasRecordedCompletionRef.current) {
+        hasRecordedCompletionRef.current = true;
+        recordArticleReadCompleted(article.slug);
+      }
 
       if (headings.length > 0) {
         const triggerOffset = window.innerHeight * 0.42;
@@ -174,7 +186,7 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
   // تحديث عنوان الصفحة لمحركات البحث عند فتح المقال
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = `${article.title} — بصائر`;
+    document.title = `${article.title} — ${siteConfig.brandWordmark || 'بصائر'}`;
     return () => {
       document.title = prevTitle;
     };
@@ -308,11 +320,11 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
               </a>
               <span>من</span>
               <a
-                href={`#/blog/${article.authorSlug || 'baraa'}`}
+                href={article.authorSlug || article.author.slug ? `#/blog/${article.authorSlug || article.author.slug}` : '#/blogs'}
                 onClick={(e) => {
                   e.preventDefault();
                   if (onSelectWriterBlog) {
-                    onSelectWriterBlog(article.authorSlug || 'baraa');
+                    onSelectWriterBlog(article.authorSlug || article.author.slug || '');
                   }
                 }}
                 className="font-bold text-[#141413] dark:text-[#F5F3EF] hover:text-[#E05324] transition-colors"
@@ -440,12 +452,14 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
         </div>
 
         {/* الصورة الرئيسية للمقال */}
+        {Boolean(article.coverImage?.trim()) && !coverImgError && (
         <figure className="mx-auto max-w-[780px] my-8 sm:my-10">
           <div className="overflow-hidden rounded-[22px] bg-[#EFECE6] dark:bg-[#1D1B19]">
             <img
               src={article.coverImage}
               alt={article.title}
               loading="lazy"
+              onError={() => setCoverImgError(true)}
               className="w-full aspect-[16/10] object-cover"
             />
           </div>
@@ -455,6 +469,7 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
             </figcaption>
           )}
         </figure>
+        )}
 
         {/* عمود متن المقال: عرض 700px (بين 680 و720px)، حجم خط 18px، ارتفاع سطر 1.92 */}
         <div
@@ -737,11 +752,11 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
               </p>
               <div className="mt-3">
                 <a
-                  href={`#/blog/${article.authorSlug || 'baraa'}`}
+                  href={article.authorSlug || article.author.slug ? `#/blog/${article.authorSlug || article.author.slug}` : '#/blogs'}
                   onClick={(e) => {
                     e.preventDefault();
                     if (onSelectWriterBlog) {
-                      onSelectWriterBlog(article.authorSlug || 'baraa');
+                      onSelectWriterBlog(article.authorSlug || article.author.slug || '');
                     }
                   }}
                   className="font-ui inline-flex items-center gap-1 text-xs font-bold text-[#E05324] dark:text-[#F06438] hover:underline"
@@ -788,13 +803,15 @@ export const ArticlePage: React.FC<ArticlePageProps> = ({
                   onSelectArticle={onSelectArticle}
                   onSelectCategory={onSelectCategory}
                   onSelectWriterBlog={onSelectWriterBlog}
+                  isBookmarked={bookmarkedIds.includes(rel.id)}
+                  onToggleBookmark={onToggleBookmark}
                 />
               ))}
             </div>
           </section>
         )}
 
-        <NewsletterSection />
+        {siteConfig.showNewsletterSection && <NewsletterSection siteConfig={siteConfig} />}
       </article>
     </>
   );

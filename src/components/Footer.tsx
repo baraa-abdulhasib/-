@@ -129,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({
                   }}
                   className="text-[#4A4742] dark:text-[#B8B3AA] hover:text-[#E05324] transition-colors"
                 >
-                  عن منصة بصائر
+                  عن منصة {config.brandWordmark}
                 </a>
               </li>
               <li>

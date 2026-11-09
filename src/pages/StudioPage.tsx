@@ -405,6 +405,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
   const existingDraft = loadStudioDraft();
+  const activeCategories = siteConfig.categories?.length ? siteConfig.categories : CATEGORIES;
 
   const [title, setTitle] = useState(existingDraft?.title || '');
   const [subtitle, setSubtitle] = useState(existingDraft?.subtitle || '');
@@ -417,6 +418,10 @@ export const StudioPage: React.FC<StudioPageProps> = ({
   const [selectedAuthorSlug, setSelectedAuthorSlug] = useState<string>(
     siteConfig.defaultWriterSlug || 'baraa'
   );
+  const activeWriter =
+    siteConfig.writers.find((w) => w.slug === selectedAuthorSlug) ||
+    siteConfig.writers[0] ||
+    BLOG_META.author;
   const [seriesName, setSeriesName] = useState(
     existingDraft?.seriesName ||
       siteConfig.series?.[0]?.title ||
@@ -1380,7 +1385,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({
   // بناء كائن المقال الكامل للنشر أو لحفظ تعديلات مقال موجود
   const buildArticleObject = (): Article => {
     const selectedCategory =
-      CATEGORIES.find((c) => c.slug === categorySlug) || CATEGORIES[0];
+      activeCategories.find((c) => c.slug === categorySlug) || activeCategories[0] || CATEGORIES[0];
     const rawHtml = editorRef.current?.innerHTML || '';
     const parsedBlocks = parseEditorHtmlToBlocks(rawHtml);
     const plainText = editorRef.current?.innerText.trim() || '';
@@ -1588,12 +1593,12 @@ export const StudioPage: React.FC<StudioPageProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="hidden md:flex items-center gap-2 rounded-full bg-[#EFECE6] dark:bg-[#1D1B19] py-1 pr-1.5 pl-3">
               <img
-                src={BLOG_META.author.avatar}
-                alt={BLOG_META.author.name}
+                src={activeWriter.avatar}
+                alt={activeWriter.name}
                 className="h-6 w-6 rounded-full object-cover"
               />
               <span className="font-ui text-[13px] font-bold text-[#141413] dark:text-[#F5F3EF]">
-                {BLOG_META.author.name}
+                {activeWriter.name}
               </span>
             </div>
 
@@ -1705,12 +1710,12 @@ export const StudioPage: React.FC<StudioPageProps> = ({
             <div className="font-ui my-6 flex flex-wrap items-center justify-between gap-3 border-y border-[#E6E2D8]/80 dark:border-[#2A2724] py-3.5">
               <div className="flex items-center gap-2.5">
                 <img
-                  src={BLOG_META.author.avatar}
-                  alt={BLOG_META.author.name}
+                  src={activeWriter.avatar}
+                  alt={activeWriter.name}
                   className="h-8 w-8 rounded-full object-cover ring-1 ring-black/10 dark:ring-white/10"
                 />
                 <span className="text-[14.5px] font-bold text-[#E05324] dark:text-[#F06438]">
-                  {BLOG_META.author.name}
+                  {activeWriter.name}
                 </span>
                 <span className="text-[12.5px] text-[#78736A]">• {savedIndicator}</span>
               </div>
@@ -1723,7 +1728,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({
                   aria-label="تصنيف المقال"
                   className="rounded-xl bg-[#EFECE6] dark:bg-[#1D1B19] px-3 py-1.5 text-[13.5px] font-bold text-[#141413] dark:text-[#F5F3EF] focus:outline-none"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {activeCategories.map((cat) => (
                     <option key={cat.id} value={cat.slug}>
                       {cat.name}
                     </option>
@@ -2407,7 +2412,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({
               >
                 الكل ({siteArticles.length})
               </button>
-              {CATEGORIES.map((cat) => (
+              {activeCategories.map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
@@ -2610,7 +2615,8 @@ export const StudioPage: React.FC<StudioPageProps> = ({
               onSubmit={(e) => {
                 e.preventDefault();
                 const cat =
-                  CATEGORIES.find((c) => c.slug === quickEditArticle.categorySlug) ||
+                  activeCategories.find((c) => c.slug === quickEditArticle.categorySlug) ||
+                  activeCategories[0] ||
                   CATEGORIES[0];
                 const updated: Article = {
                   ...quickEditArticle,
@@ -2664,7 +2670,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({
                     }
                     className="w-full rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-white dark:bg-[#121110] px-3 py-2.5 text-[14px] font-bold focus:outline-none"
                   >
-                    {CATEGORIES.map((cat) => (
+                    {activeCategories.map((cat) => (
                       <option key={cat.id} value={cat.slug}>
                         {cat.name}
                       </option>
@@ -2706,6 +2712,38 @@ export const StudioPage: React.FC<StudioPageProps> = ({
               {/* اختيار صورة الغلاف */}
               <div>
                 <label className="block text-[13.5px] font-bold mb-2">لوحة الغلاف</label>
+                <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-[#141413]/40 dark:border-[#F5F3EF]/40 px-3 py-1.5 text-[12.5px] font-bold hover:bg-[#EFECE6] dark:hover:bg-[#23201D] transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-[#E05324]" />
+                    <span>رفع صورة غلاف مخصصة</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (typeof reader.result === 'string') {
+                            setQuickEditArticle({ ...quickEditArticle, coverImage: reader.result });
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={quickEditArticle.coverImage.startsWith('data:') ? '' : quickEditArticle.coverImage}
+                    onChange={(e) =>
+                      setQuickEditArticle({ ...quickEditArticle, coverImage: e.target.value })
+                    }
+                    placeholder="أو الصق رابط صورة الغلاف (https://...)"
+                    className="flex-1 min-w-[180px] rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-white dark:bg-[#121110] px-3 py-1.5 text-[12.5px] focus:outline-none"
+                  />
+                </div>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                   {PRESET_COVERS.map((preset) => (
                     <button
@@ -3096,9 +3134,37 @@ export const StudioPage: React.FC<StudioPageProps> = ({
             <div className="space-y-5">
               {/* اختيار اللوحة الفنية للغلاف */}
               <div>
-                <label className="block text-[14px] font-bold mb-2">
-                  لوحة غلاف المقال
-                </label>
+                <div className="block text-[14px] font-bold mb-2">
+                  <span className="block text-[14px] font-bold mb-2">لوحة غلاف المقال</span>
+                  <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-[#141413]/40 dark:border-[#F5F3EF]/40 px-3 py-1.5 text-[12.5px] font-bold hover:bg-[#EFECE6] dark:hover:bg-[#23201D] transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-[#E05324]" />
+                      <span>رفع صورة غلاف مخصصة</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === 'string') setCoverImage(reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      value={coverImage.startsWith('data:') ? '' : coverImage}
+                      onChange={(e) => setCoverImage(e.target.value)}
+                      placeholder="أو الصق رابط صورة الغلاف (https://...)"
+                      className="flex-1 min-w-[180px] rounded-xl border border-[#D6CEBE] dark:border-[#332F2B] bg-white dark:bg-[#121110] px-3 py-1.5 text-[12.5px] focus:outline-none"
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-4 sm:grid-cols-4 gap-2.5">
                   {PRESET_COVERS.map((preset) => (
                     <button

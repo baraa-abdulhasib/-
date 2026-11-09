@@ -200,7 +200,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="ابحث في المقالات، المقاصد، أو المفاهيم الشرعية..."
                 autoFocus
-                className="w-full rounded-xl border-[1.5px] border-[#141413] dark:border-[#F5F3EF] bg-transparent py-3 pr-12 pl-10 text-[16px] text-[#141413] dark:text-[#F5F3EF] placeholder:text-[#78736A] focus:outline-none"
+                className="w-full rounded-xl border-[1.5px] border-[#141413] dark:border-[#F5F3EF] bg-transparent py-3 pr-12 pl-10 text-[16px] text-[#141413] dark:text-[#F5F3EF] placeholder:text-[#78736A] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
               />
               {searchQuery && (
                 <button
@@ -239,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
                             src={art.coverImage}
                             alt={art.title}
                             loading="lazy"
-                            className="h-12 w-12 rounded-xl object-cover shrink-0"
+                            className="h-12 w-12 rounded-xl object-cover shrink-0 bg-[#EFECE6] dark:bg-[#142822]" onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-[15.5px] text-[#141413] dark:text-[#F5F3EF] group-hover:text-[#E05324] truncate">
@@ -254,7 +254,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   ) : (
                     <p className="py-6 text-center text-[15px] text-[#78736A]">
-                      لم نعثر على مقالات تطابق عبارة البحث. جرّب البحث بكلمات أخرى مثل «المقاصد» أو «الخلوة» أو «الشاطبي».
+                      لم نعثر على مقالات تطابق عبارة البحث. جرّب كلمات أخرى أو تصفّح التصنيفات.
                     </p>
                   )}
                 </div>

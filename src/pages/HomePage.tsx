@@ -231,7 +231,13 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* قائمة المقالات */}
-        {viewMode === 'horizontal' ? (
+        {filteredLatestArticles.length === 0 ? (
+          <div className="rounded-2xl border border-[#E6E2D8] dark:border-[#2A2724] bg-[#EFECE6]/45 dark:bg-[#1D1B19]/60 py-12 px-6 text-center">
+            <p className="font-prose text-[16.5px] text-[#78736A] dark:text-[#8A847A]">
+              لا توجد مقالات منشورة في هذا التصنيف حالياً.
+            </p>
+          </div>
+        ) : viewMode === 'horizontal' ? (
           <div className="divide-y divide-[#E6E2D8] dark:divide-[#2A2724]">
             {filteredLatestArticles.map((article) => (
               <ArticleCard
@@ -316,7 +322,14 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                 <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 flex flex-col justify-end">
                   <span className="font-ui text-[12px] font-bold text-[#F5B800] mb-1">
-                    {series.countLabel}
+                    {(() => {
+                      const seriesCount = articles.filter(
+                        (a) => (a.seriesName || '').trim() === series.title.trim()
+                      ).length;
+                      return seriesCount > 0
+                        ? `${seriesCount.toLocaleString('ar-EG')} ${seriesCount === 1 ? 'مقال منشور' : 'مقالات منشورة'}`
+                        : series.countLabel;
+                    })()}
                   </span>
                   <h3 className="font-prose text-[20px] sm:text-[23px] font-bold leading-tight text-[#F9F7F2] group-hover:text-[#F5B800] transition-colors">
                     {series.title}

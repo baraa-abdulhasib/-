@@ -73,7 +73,7 @@ export const StudioAuthModal: React.FC<StudioAuthModalProps> = ({
         setIsUnlocked(true);
       } else {
         setError(
-          `هذا الحساب (${user.email || ''}) غير مصرح له كمشرف. يرجى تسجيل الدخول بحساب المشرف (${BOOTSTRAPPED_ADMIN_EMAIL}).`
+          'هذا الحساب غير مصرّح له بالدخول إلى لوحة الإدارة.'
         );
         await signOutAdmin();
       }
@@ -199,7 +199,7 @@ export const StudioAuthModal: React.FC<StudioAuthModalProps> = ({
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#F5B800] shrink-0" />
                   <span>
-                    متصل سحابياً بـ <strong>Firebase</strong> ({firebaseUser?.email}) — النشر والتعديلات تظهر لجميع الزوار فوراً
+                    متصل سحابياً بـ <strong>Firebase</strong> ({firebaseUser?.email}) — يُحفظ ما تنشره سحابياً ويظهر للزوار بعد نجاح المزامنة
                   </span>
                 </div>
               </div>

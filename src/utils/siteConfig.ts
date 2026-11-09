@@ -7,11 +7,16 @@ import {
   WRITER_BLOGS,
   WriterBlog,
 } from '../data/articles';
+import {
+  saveSiteAnalyticsToFirestore,
+  saveSiteConfigToFirestore,
+} from '../firebase';
 
 const LEGACY_SITE_CONFIG_KEY_V1 = 'basair_site_config_v1';
 const LEGACY_SITE_ANALYTICS_KEY_V1 = 'basair_site_analytics_v1';
 const SITE_CONFIG_STORAGE_KEY = 'basair_site_config_v2';
 const SITE_ANALYTICS_STORAGE_KEY = 'basair_site_analytics_v2';
+const SESSION_UNIQUE_VISITOR_KEY = 'basair_unique_session_counted_v1';
 
 export interface SiteConfig {
   // الهوية والنصوص العامة
@@ -156,16 +161,31 @@ export function loadSiteConfig(): SiteConfig {
   }
 }
 
-export function saveSiteConfig(config: SiteConfig, skipCloudSync = false): void {
+let siteConfigCloudDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function saveSiteConfig(
+  config: SiteConfig,
+  skipCloudSync = false,
+  immediateCloudSync = false
+): void {
   try {
     localStorage.setItem(SITE_CONFIG_STORAGE_KEY, JSON.stringify(config));
   } catch {
     // ignore storage errors
   }
   if (!skipCloudSync) {
-    import('../firebase')
-      .then(({ saveSiteConfigToFirestore }) => saveSiteConfigToFirestore(config))
-      .catch(() => {});
+    if (siteConfigCloudDebounceTimer) {
+      clearTimeout(siteConfigCloudDebounceTimer);
+      siteConfigCloudDebounceTimer = null;
+    }
+    if (immediateCloudSync) {
+      saveSiteConfigToFirestore(config).catch(() => {});
+    } else {
+      siteConfigCloudDebounceTimer = setTimeout(() => {
+        siteConfigCloudDebounceTimer = null;
+        saveSiteConfigToFirestore(config).catch(() => {});
+      }, 800);
+    }
   }
 }
 
@@ -226,9 +246,18 @@ export function loadSiteAnalytics(): SiteAnalytics {
     return {
       ...DEFAULT_ANALYTICS,
       ...parsed,
+      dailyStats:
+        Array.isArray(parsed.dailyStats) && parsed.dailyStats.length > 0
+          ? parsed.dailyStats
+          : [...DEFAULT_ANALYTICS.dailyStats],
       articleViews: { ...(parsed.articleViews || {}) },
+      articleReadsCompleted: { ...(parsed.articleReadsCompleted || {}) },
       writerVisits: { ...(parsed.writerVisits || {}) },
       categoryVisits: { ...(parsed.categoryVisits || {}) },
+      trafficSources: {
+        ...DEFAULT_ANALYTICS.trafficSources,
+        ...(parsed.trafficSources || {}),
+      },
     };
   } catch {
     return { ...DEFAULT_ANALYTICS };
@@ -242,29 +271,78 @@ export function saveSiteAnalytics(analytics: SiteAnalytics, skipCloudSync = fals
     // ignore
   }
   if (!skipCloudSync) {
-    import('../firebase')
-      .then(({ saveSiteAnalyticsToFirestore }) => saveSiteAnalyticsToFirestore(analytics))
-      .catch(() => {});
+    saveSiteAnalyticsToFirestore(analytics).catch(() => {});
   }
 }
 
-export function recordSiteVisit(): SiteAnalytics {
+const ARABIC_DAYS_MAP: Record<number, string> = {
+  0: 'الأحد',
+  1: 'الإثنين',
+  2: 'الثلاثاء',
+  3: 'الأربعاء',
+  4: 'الخميس',
+  5: 'الجمعة',
+  6: 'السبت',
+};
+
+export function recordSiteVisit(skipCloudSync = false): SiteAnalytics {
   const current = loadSiteAnalytics();
+  let isNewSessionVisitor = false;
+  try {
+    if (!sessionStorage.getItem(SESSION_UNIQUE_VISITOR_KEY)) {
+      sessionStorage.setItem(SESSION_UNIQUE_VISITOR_KEY, '1');
+      isNewSessionVisitor = true;
+    }
+  } catch {
+    // ignore sessionStorage errors
+  }
+
+  const todayLabel = ARABIC_DAYS_MAP[new Date().getDay()] || 'الجمعة';
   const nextDaily = [...current.dailyStats];
   if (nextDaily.length > 0) {
-    const lastIdx = nextDaily.length - 1;
-    nextDaily[lastIdx] = {
-      ...nextDaily[lastIdx],
-      visits: nextDaily[lastIdx].visits + 1,
+    const matchedIdx = nextDaily.findIndex((d) => d.dayLabel === todayLabel);
+    const targetIdx = matchedIdx >= 0 ? matchedIdx : nextDaily.length - 1;
+    nextDaily[targetIdx] = {
+      ...nextDaily[targetIdx],
+      visits: (nextDaily[targetIdx].visits || 0) + 1,
+      uniqueVisitors:
+        (nextDaily[targetIdx].uniqueVisitors || 0) + (isNewSessionVisitor ? 1 : 0),
     };
   }
+
+  // تصنيف مصدر الزيارة فعلياً من document.referrer (مرة واحدة لكل جلسة)
+  const nextTraffic = { ...current.trafficSources };
+  if (isNewSessionVisitor) {
+    let sourceKey: 'direct' | 'search' | 'social' | 'referral' = 'direct';
+    try {
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      if (ref && ref.hostname !== window.location.hostname) {
+        const host = ref.hostname.toLowerCase();
+        if (/(google|bing|yahoo|duckduckgo|yandex|baidu|ecosia)\./.test(host)) {
+          sourceKey = 'search';
+        } else if (
+          /(t\.me|telegram|facebook|fb\.|instagram|twitter|x\.com|t\.co|whatsapp|youtube|linkedin|reddit|tiktok)/.test(host)
+        ) {
+          sourceKey = 'social';
+        } else {
+          sourceKey = 'referral';
+        }
+      }
+    } catch {
+      // ignore referrer parsing errors
+    }
+    nextTraffic[sourceKey] = (nextTraffic[sourceKey] || 0) + 1;
+  }
+
   const updated: SiteAnalytics = {
     ...current,
-    totalSiteVisits: current.totalSiteVisits + 1,
+    totalSiteVisits: (current.totalSiteVisits || 0) + 1,
+    uniqueVisitors: (current.uniqueVisitors || 0) + (isNewSessionVisitor ? 1 : 0),
     dailyStats: nextDaily,
+    trafficSources: nextTraffic,
     lastUpdated: new Date().toISOString(),
   };
-  saveSiteAnalytics(updated);
+  saveSiteAnalytics(updated, skipCloudSync);
   return updated;
 }
 
@@ -275,10 +353,9 @@ export function recordArticleView(
 ): SiteAnalytics {
   const current = loadSiteAnalytics();
   const prevArticleViews = current.articleViews[articleSlug] || 0;
-  const writerKey = authorSlug || 'baraa';
-  const prevWriterVisits = current.writerVisits[writerKey] || 0;
-  const catKey = categorySlug || 'maqasid';
-  const prevCatVisits = current.categoryVisits[catKey] || 0;
+  // لا نَنسب الزيارة لكاتب أو تصنيف افتراضي إن غاب المعرّف
+  const writerKey = authorSlug || '';
+  const catKey = categorySlug || '';
 
   const updated: SiteAnalytics = {
     ...current,
@@ -287,14 +364,12 @@ export function recordArticleView(
       ...current.articleViews,
       [articleSlug]: prevArticleViews + 1,
     },
-    writerVisits: {
-      ...current.writerVisits,
-      [writerKey]: prevWriterVisits + 1,
-    },
-    categoryVisits: {
-      ...current.categoryVisits,
-      [catKey]: prevCatVisits + 1,
-    },
+    writerVisits: writerKey
+      ? { ...current.writerVisits, [writerKey]: (current.writerVisits[writerKey] || 0) + 1 }
+      : current.writerVisits,
+    categoryVisits: catKey
+      ? { ...current.categoryVisits, [catKey]: (current.categoryVisits[catKey] || 0) + 1 }
+      : current.categoryVisits,
     lastUpdated: new Date().toISOString(),
   };
   saveSiteAnalytics(updated);
@@ -310,6 +385,21 @@ export function recordWriterBlogVisit(writerSlug: string): SiteAnalytics {
     writerVisits: {
       ...current.writerVisits,
       [writerSlug]: prev + 1,
+    },
+    lastUpdated: new Date().toISOString(),
+  };
+  saveSiteAnalytics(updated);
+  return updated;
+}
+
+export function recordArticleReadCompleted(articleSlug: string): SiteAnalytics {
+  const current = loadSiteAnalytics();
+  const prev = current.articleReadsCompleted[articleSlug] || 0;
+  const updated: SiteAnalytics = {
+    ...current,
+    articleReadsCompleted: {
+      ...current.articleReadsCompleted,
+      [articleSlug]: prev + 1,
     },
     lastUpdated: new Date().toISOString(),
   };
